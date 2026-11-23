@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estudo de Engenharia de Dados na AWS</title>
+<meta name="description" content="Material gratuito de estudo: roteiro de 8 semanas, fichas técnicas de Spark e AWS e simulado com 30 questões.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500&family=Space+Grotesk:wght@600&display=swap">
+<style>
+:root{--bg:#f5f6f8;--surface:#fff;--fg:#1a2229;--muted:#5b6773;--line:#dce1e6;--accent:#0d6e66;--accent2:#2f5bb7;
+--f-display:"Space Grotesk",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#121619;--surface:#1a2025;--fg:#e3e8ec;--muted:#98a4ae;--line:#2b353c;--accent:#5fd0bf;--accent2:#8fb0f5;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 var(--f-body);padding:48px max(16px,env(safe-area-inset-left,0px)) 64px}
+.wrap{max-width:900px;margin:0 auto;display:grid;gap:32px}
+.eyebrow{font:500 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:600 clamp(30px,5vw,44px)/1.15 var(--f-display);margin:8px 0 12px;text-wrap:balance}
+h2{font:600 22px/1.2 var(--f-display);margin:0}
+p{margin:0;max-width:66ch;color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+a.card{display:grid;gap:10px;padding:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface);text-decoration:none;color:var(--fg)}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);outline:none}
+a.card .eyebrow{color:var(--accent2)}
+ul{margin:0;padding-left:20px;color:var(--muted)}
+li+li{margin-top:4px}
+.go{font:500 14px var(--f-mono);color:var(--accent)}
+footer{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Material gratuito · em português</span>
+    <h1>Estudo de Engenharia de Dados na AWS</h1>
+    <p>Para quem quer ir além de pipelines: dados com perfil de software e plataforma. Python, APIs, eventos, Spark, data lake, CI/CD e observabilidade, sempre explicando o porquê de cada coisa, com diagramas, código e perguntas de entrevista.</p>
+  </header>
+
+  <div class="cards">
+    <a class="card" href="roteiro.html">
+      <span class="eyebrow">Trilha de 8 semanas</span>
+      <h2>Roteiro de estudo</h2>
+      <ul>
+        <li>Python para produção, APIs e microsserviços</li>
+        <li>Lambda, ECS, API Gateway e IAM</li>
+        <li>Eventos: SNS, SQS, EventBridge, idempotência</li>
+        <li>Bancos, data lake, CI/CD e Terraform</li>
+        <li>Checklist com progresso salvo</li>
+      </ul>
+      <span class="go">Abrir roteiro →</span>
+    </a>
+    <a class="card" href="fichas-e-simulado.html">
+      <span class="eyebrow">Fichas técnicas + treino</span>
+      <h2>Por dentro do Spark e da AWS</h2>
+      <ul>
+        <li>Driver, executors, shuffle, broadcast join, skew</li>
+        <li>DataFrame, groupBy, window, repartition e coalesce</li>
+        <li>Parquet, arquivos pequenos, Iceberg</li>
+        <li>Simulado com 30 questões e correção na hora</li>
+        <li>Casos abertos de entrevista de arquitetura</li>
+      </ul>
+      <span class="go">Abrir fichas e simulado →</span>
+    </a>
+  </div>
+
+  <section>
+    <h2>Como usar</h2>
+    <ul>
+      <li>Comece pelo roteiro para ter o panorama geral.</li>
+      <li>Em cada ficha, leia a situação e tente explicar a solução em voz alta antes de ler a resposta.</li>
+      <li>Faça o simulado sem consultar e volte nas fichas dos temas em que errou.</li>
+      <li>Pratique na AWS com alerta de orçamento ligado e destrua os recursos ao terminar.</li>
+    </ul>
+  </section>
+
+  <footer>Conteúdo de estudo livre para compartilhar. Encontrou um erro ou quer sugerir um tema? Abra uma issue no repositório.</footer>
+</div>
+</body>
+</html>

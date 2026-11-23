@@ -1,0 +1,747 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Roteiro Plataforma de Dados AWS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: trilha lateral de semanas + coluna de leitura; cada módulo = conceito, diagrama, código, entrevista, checklist */
+:root{
+  --bg:#f6f7f8; --surface:#ffffff; --fg:#1b2329; --muted:#5a6772; --line:#dde2e6;
+  --accent:#0d6e66; --accent-soft:#e0f1ee; --warn:#9a4d0e; --warn-soft:#fbeedd; --bad:#a02c2c; --bad-soft:#fbe9e9;
+  --code-bg:#f0f3f5;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171b; --surface:#1a2126; --fg:#e4e9ec; --muted:#97a4ae; --line:#2c363d;
+  --accent:#5fd0bf; --accent-soft:#163a36; --warn:#f0b36b; --warn-soft:#3a2a16; --bad:#f08f8f; --bad-soft:#3a1c1c; --code-bg:#151b1f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171b; --surface:#1a2126; --fg:#e4e9ec; --muted:#97a4ae; --line:#2c363d;
+  --accent:#5fd0bf; --accent-soft:#163a36; --warn:#f0b36b; --warn-soft:#3a2a16; --bad:#f08f8f; --bad-soft:#3a1c1c; --code-bg:#151b1f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:240px minmax(0,1fr);gap:40px}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}nav.trail{position:static!important}}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(28px,4vw,40px);font-weight:600}
+h2{font-size:26px;font-weight:600}
+h3{font-size:17px;font-weight:600;margin-top:8px}
+p{margin:0;max-width:68ch}
+a{color:var(--accent)}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header.top{grid-column:1/-1;display:grid;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+header.top p{color:var(--muted)}
+.progress{display:flex;align-items:center;gap:12px;font:500 13px var(--f-mono);color:var(--muted)}
+.bar{flex:1;max-width:320px;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+nav.trail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;display:grid;gap:2px}
+nav.trail a{display:grid;grid-template-columns:44px 1fr;gap:8px;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--fg);font-size:14px}
+nav.trail a:hover,nav.trail a:focus-visible{background:var(--surface);outline:none}
+nav.trail a span:first-child{font:500 12px/1.9 var(--f-mono);color:var(--muted)}
+main{display:grid;gap:56px;min-width:0}
+section.mod{display:grid;gap:18px;min-width:0;scroll-margin-top:20px}
+.mod-head{display:grid;gap:6px}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font:500 12px var(--f-mono);padding:2px 8px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;overflow-x:auto}
+figure svg{display:block;min-width:560px;width:100%;height:auto}
+figcaption{font-size:13px;color:var(--muted);margin-top:8px}
+svg text{font-family:var(--f-body);fill:var(--fg)}
+svg .sub{fill:var(--muted);font-size:12px}
+svg .bx{fill:var(--bg);stroke:var(--line)}
+svg .ac{fill:var(--accent-soft);stroke:var(--accent)}
+svg .wn{fill:var(--warn-soft);stroke:var(--warn)}
+svg .bd{fill:var(--bad-soft);stroke:var(--bad)}
+svg .ln{stroke:var(--muted);stroke-width:1.3;fill:none}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;font:13px/1.6 var(--f-mono);tab-size:4}
+code{font-family:var(--f-mono);font-size:.9em}
+p code,li code,td code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.c{color:var(--muted)}
+.code-label{font:500 12px var(--f-mono);color:var(--muted);margin-bottom:-10px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tbl{overflow-x:auto}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+ul{margin:0;padding-left:20px;max-width:68ch}
+li+li{margin-top:4px}
+.qa{display:grid;gap:8px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+summary{cursor:pointer;font-weight:500}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+details p{margin-top:8px;color:var(--fg)}
+.check{display:grid;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.check label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;font-size:15px}
+.check input{margin-top:5px;accent-color:var(--accent)}
+.tip{border-left:3px solid var(--warn);padding:4px 0 4px 14px;color:var(--fg)}
+.tip b{color:var(--warn)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">Trilha de 8 semanas · engenharia de dados e plataforma</span>
+  <h1>Roteiro Plataforma de Dados AWS</h1>
+  <p>Para quem estuda engenharia de dados com perfil de software e plataforma: Python, AWS, APIs e microsserviços, bancos, CI/CD e arquitetura de eventos. Cada módulo traz o conceito, um diagrama, código de exemplo, perguntas de entrevista e um checklist. Seu progresso fica salvo neste navegador.</p>
+  <div class="progress"><div class="bar"><i id="pbar"></i></div><span id="ptxt">0 de 0 concluídos</span></div>
+</header>
+
+<nav class="trail" aria-label="Módulos">
+  <a href="#m0"><span>Início</span><span>Panorama</span></a>
+  <a href="#m1"><span>Sem 1</span><span>Python para produção</span></a>
+  <a href="#m2"><span>Sem 1</span><span>APIs e microsserviços</span></a>
+  <a href="#m3"><span>Sem 2</span><span>AWS de aplicação</span></a>
+  <a href="#m4"><span>Sem 3</span><span>IAM e segurança</span></a>
+  <a href="#m5"><span>Sem 4</span><span>Eventos e arquitetura distribuída</span></a>
+  <a href="#m6"><span>Sem 5</span><span>Bancos relacionais e NoSQL</span></a>
+  <a href="#m7"><span>Sem 6</span><span>Dados: S3, Glue, EMR, Athena</span></a>
+  <a href="#m8"><span>Sem 7</span><span>Git, CI/CD e Terraform</span></a>
+  <a href="#m9"><span>Sem 8</span><span>Observabilidade e DataOps</span></a>
+  <a href="#m10"><span>Final</span><span>Projeto de portfólio</span></a>
+</nav>
+
+<main>
+
+<!-- PANORAMA -->
+<section class="mod" id="m0">
+  <div class="mod-head"><span class="eyebrow">Ponto de partida</span><h2>Panorama: como as peças se encaixam</h2></div>
+  <p>Uma plataforma de dados moderna tem três camadas que conversam por APIs e por eventos. O mercado pede alguém que transite pelas três, e não só pela de dados. Em volta de tudo ficam segurança (IAM), entrega (CI/CD e infraestrutura como código) e observabilidade.</p>
+  <figure>
+    <svg viewBox="0 0 700 330" role="img" aria-label="Três camadas: aplicação, eventos e dados, envolvidas por IAM, CI/CD e observabilidade">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="6" y="6" width="688" height="318" rx="14" class="bx" stroke-dasharray="5 4"/>
+      <text x="350" y="30" text-anchor="middle" class="sub">Transversal: IAM · CI/CD · Terraform · observabilidade</text>
+      <rect x="30" y="50" width="640" height="70" rx="10" class="ac"/>
+      <text x="50" y="78" font-weight="600">1 · Aplicação</text>
+      <text x="50" y="102" class="sub">API Gateway → Lambda / ECS Fargate (FastAPI) · RDS Postgres · DynamoDB</text>
+      <line x1="350" y1="120" x2="350" y2="146" class="ln" marker-end="url(#ar)"/>
+      <rect x="30" y="148" width="640" height="70" rx="10" class="wn"/>
+      <text x="50" y="176" font-weight="600">2 · Integração por eventos</text>
+      <text x="50" y="200" class="sub">SNS · SQS · EventBridge · Kinesis: desacopla quem produz de quem consome</text>
+      <line x1="350" y1="218" x2="350" y2="244" class="ln" marker-end="url(#ar)"/>
+      <rect x="30" y="246" width="640" height="62" rx="10" class="bx"/>
+      <text x="50" y="272" font-weight="600">3 · Dados</text>
+      <text x="50" y="294" class="sub">S3 bronze → silver → gold · Glue / EMR (PySpark) · Athena (SQL)</text>
+    </svg>
+    <figcaption>Leia de cima para baixo: o evento nasce numa API, viaja por filas e termina no data lake.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <tr><th>Tema</th><th>Módulo</th><th>Peso</th></tr>
+    <tr><td>Arquitetura distribuída e eventos</td><td>Semana 4</td><td>Alto</td></tr>
+    <tr><td>AWS (Lambda, S3, Glue, Athena, EMR, API Gateway, IAM)</td><td>Semanas 2, 3 e 6</td><td>Alto</td></tr>
+    <tr><td>APIs e microsserviços, ECS</td><td>Semanas 1 e 2</td><td>Alto</td></tr>
+    <tr><td>Git, CI/CD e esteiras</td><td>Semana 7</td><td>Médio</td></tr>
+    <tr><td>Bancos relacionais e NoSQL</td><td>Semana 5</td><td>Médio</td></tr>
+    <tr><td>Python</td><td>Semana 1 e em todas</td><td>Base</td></tr>
+    <tr><td>DataOps, observabilidade, produção</td><td>Semana 8</td><td>Diferencial</td></tr>
+  </table></div>
+</section>
+
+<!-- PYTHON -->
+<section class="mod" id="m1">
+  <div class="mod-head"><span class="eyebrow">Semana 1</span><h2>Python para produção</h2>
+  <div class="tags"><span class="tag">type hints</span><span class="tag">boto3</span><span class="tag">pytest</span><span class="tag">moto</span><span class="tag">logging</span></div></div>
+  <p>O mercado quer Python de engenheiro de software: código organizado em camadas, testável e com logs úteis. Separe o <code>handler</code> (entrada da Lambda ou rota da API) da regra de negócio e do acesso a dados. Assim você testa a regra sem AWS.</p>
+  <div class="code-label">handler.py · Lambda que salva um pedido no S3</div>
+<pre><span class="c"># camadas: handler (entrada) -&gt; service (regra) -&gt; repo (AWS)</span>
+import json, logging, os
+import boto3
+
+log = logging.getLogger()
+log.setLevel(logging.INFO)
+s3 = boto3.client("s3")             <span class="c"># criado fora do handler: reaproveitado entre invocações</span>
+BUCKET = os.environ["BUCKET"]
+
+def validar(pedido: dict) -&gt; None:
+    if pedido.get("valor", 0) &lt;= 0:
+        raise ValueError("valor deve ser positivo")
+
+def salvar(pedido: dict) -&gt; str:
+    chave = f"bronze/pedidos/dt={pedido['data']}/{pedido['id']}.json"
+    s3.put_object(Bucket=BUCKET, Key=chave, Body=json.dumps(pedido))
+    return chave
+
+def handler(event, context):
+    pedido = json.loads(event["body"])
+    try:
+        validar(pedido)
+    except ValueError as e:
+        return {"statusCode": 400, "body": json.dumps({"erro": str(e)})}
+    chave = salvar(pedido)
+    log.info(json.dumps({"evento": "pedido_salvo", "id": pedido["id"], "chave": chave}))
+    return {"statusCode": 201, "body": json.dumps({"chave": chave})}</pre>
+  <div class="code-label">test_handler.py · teste com S3 falso (moto)</div>
+<pre>import json, boto3, pytest
+from moto import mock_aws
+
+@pytest.fixture
+def bucket(monkeypatch):
+    monkeypatch.setenv("BUCKET", "teste")
+    with mock_aws():
+        boto3.client("s3", region_name="us-east-1").create_bucket(Bucket="teste")
+        yield
+
+def test_rejeita_valor_negativo(bucket):
+    import handler
+    evento = {"body": json.dumps({"id": "1", "data": "2026-11-10", "valor": -5})}
+    assert handler.handler(evento, None)["statusCode"] == 400</pre>
+  <p class="tip"><b>Dica:</b> logs em JSON (uma linha por evento) ficam pesquisáveis no CloudWatch Logs Insights. Isso já conta como observabilidade.</p>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Como você estrutura um projeto Python para produção?</summary><p>Em camadas (handler, serviço, repositório), configuração por variável de ambiente, dependências fixadas (<code>pyproject.toml</code>), lint com <code>ruff</code>, testes com <code>pytest</code> e mocks da AWS com <code>moto</code>, logs estruturados e tratamento de erro explícito.</p></details>
+    <details><summary>Por que criar o client boto3 fora do handler?</summary><p>O ambiente da Lambda é reaproveitado entre invocações (warm start). Criar o client fora do handler evita refazer a conexão a cada chamada, o que reduz latência e custo.</p></details>
+  </div>
+  <div class="check" data-mod="m1">
+    <label><input type="checkbox" id="m1a"> Escrevi uma função com type hints e testes</label>
+    <label><input type="checkbox" id="m1b"> Usei boto3 para ler e gravar no S3</label>
+    <label><input type="checkbox" id="m1c"> Mockei a AWS com moto num teste</label>
+  </div>
+</section>
+
+<!-- APIs -->
+<section class="mod" id="m2">
+  <div class="mod-head"><span class="eyebrow">Semana 1</span><h2>APIs e microsserviços</h2>
+  <div class="tags"><span class="tag">REST</span><span class="tag">FastAPI</span><span class="tag">status codes</span><span class="tag">idempotência</span><span class="tag">resiliência</span></div></div>
+  <p>Uma API é um contrato: quem chama sabe o que mandar e o que vai receber. Em microsserviços, cada serviço tem seu próprio banco e se comunica de forma síncrona (HTTP, quando precisa da resposta na hora) ou assíncrona (eventos, para desacoplar).</p>
+  <figure>
+    <svg viewBox="0 0 700 200" role="img" aria-label="Comunicação síncrona versus assíncrona entre serviços">
+      <defs><marker id="ar2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <text x="20" y="28" font-weight="600">Síncrono (HTTP)</text>
+      <rect x="20" y="42" width="150" height="50" rx="8" class="ac"/><text x="95" y="72" text-anchor="middle">Pedidos</text>
+      <line x1="170" y1="60" x2="268" y2="60" class="ln" marker-end="url(#ar2)"/><text x="219" y="52" text-anchor="middle" class="sub">GET /estoque</text>
+      <line x1="270" y1="78" x2="172" y2="78" class="ln" marker-end="url(#ar2)" stroke-dasharray="4 3"/>
+      <rect x="270" y="42" width="150" height="50" rx="8" class="ac"/><text x="345" y="72" text-anchor="middle">Estoque</text>
+      <text x="440" y="64" class="sub">Espera a resposta.</text><text x="440" y="82" class="sub">Se Estoque cair, Pedidos falha.</text>
+      <text x="20" y="128" font-weight="600">Assíncrono (eventos)</text>
+      <rect x="20" y="142" width="150" height="50" rx="8" class="ac"/><text x="95" y="172" text-anchor="middle">Pedidos</text>
+      <line x1="170" y1="167" x2="228" y2="167" class="ln" marker-end="url(#ar2)"/>
+      <rect x="230" y="142" width="110" height="50" rx="8" class="wn"/><text x="285" y="172" text-anchor="middle">Fila</text>
+      <line x1="340" y1="167" x2="398" y2="167" class="ln" marker-end="url(#ar2)"/>
+      <rect x="400" y="142" width="130" height="50" rx="8" class="ac"/><text x="465" y="172" text-anchor="middle">Faturamento</text>
+      <text x="545" y="164" class="sub">Não espera.</text><text x="545" y="182" class="sub">Fila segura o pico.</text>
+    </svg>
+  </figure>
+  <div class="tbl"><table>
+    <tr><th>Status</th><th>Significado</th><th>Exemplo</th></tr>
+    <tr><td><code>200</code> / <code>201</code></td><td>OK / criado</td><td>GET retornou; POST criou o pedido</td></tr>
+    <tr><td><code>400</code></td><td>Requisição inválida</td><td>Campo obrigatório faltando</td></tr>
+    <tr><td><code>401</code> / <code>403</code></td><td>Não autenticado / sem permissão</td><td>Token ausente / token sem escopo</td></tr>
+    <tr><td><code>404</code> / <code>409</code></td><td>Não encontrado / conflito</td><td>Pedido não existe / pedido duplicado</td></tr>
+    <tr><td><code>429</code></td><td>Muitas requisições</td><td>Throttling do API Gateway</td></tr>
+    <tr><td><code>500</code> / <code>503</code></td><td>Erro interno / indisponível</td><td>Bug / dependência fora do ar</td></tr>
+  </table></div>
+  <div class="code-label">main.py · API FastAPI com chave de idempotência</div>
+<pre>from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="pedidos", version="1.0")
+processados: dict[str, dict] = {}       <span class="c"># em produção: DynamoDB</span>
+
+class Pedido(BaseModel):
+    cliente_id: str
+    valor: float = Field(gt=0)          <span class="c"># validação automática, devolve 422 se inválido</span>
+
+@app.post("/v1/pedidos", status_code=201)
+def criar(pedido: Pedido, idempotency_key: str = Header(...)):
+    if idempotency_key in processados:  <span class="c"># cliente repetiu a chamada (timeout, retry)</span>
+        return processados[idempotency_key]
+    resultado = {"id": idempotency_key, **pedido.model_dump(), "status": "criado"}
+    processados[idempotency_key] = resultado
+    return resultado
+
+@app.get("/health")
+def health():
+    return {"ok": True}                 <span class="c"># usado pelo health check do ALB/ECS</span></pre>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>O que é idempotência e por que importa numa API?</summary><p>Chamar a mesma operação várias vezes tem o mesmo efeito de chamar uma vez. Clientes refazem chamadas em timeout; sem idempotência você cobra o cliente duas vezes. A solução é uma chave única por operação, guardada e consultada antes de processar.</p></details>
+    <details><summary>Monólito ou microsserviços?</summary><p>Depende. Microsserviços dão deploy e escala independentes, mas cobram em rede, observabilidade e consistência distribuída. Para time pequeno ou domínio ainda instável, um monólito modular costuma ser melhor. Separe quando houver um motivo claro (escala, time, ciclo de deploy).</p></details>
+    <details><summary>Como deixar a comunicação entre serviços resiliente?</summary><p>Timeout em toda chamada, retry com backoff exponencial e jitter, circuit breaker para não derrubar quem depende, e eventos assíncronos onde a resposta imediata não é necessária.</p></details>
+  </div>
+  <div class="check" data-mod="m2">
+    <label><input type="checkbox" id="m2a"> Subi uma API FastAPI local com validação</label>
+    <label><input type="checkbox" id="m2b"> Implementei Idempotency-Key</label>
+    <label><input type="checkbox" id="m2c"> Sei explicar síncrono versus assíncrono com exemplo</label>
+  </div>
+</section>
+
+<!-- AWS APP -->
+<section class="mod" id="m3">
+  <div class="mod-head"><span class="eyebrow">Semana 2</span><h2>AWS de aplicação: API Gateway, Lambda e ECS</h2>
+  <div class="tags"><span class="tag">API Gateway</span><span class="tag">Lambda</span><span class="tag">ECS Fargate</span><span class="tag">ALB</span><span class="tag">ECR</span></div></div>
+  <p>Há dois caminhos para rodar código: serverless (Lambda, você entrega uma função) e containers (ECS, você entrega uma imagem Docker). O ECS tem três conceitos: <b>task definition</b> (a receita: imagem, CPU, memória, variáveis), <b>task</b> (um container rodando) e <b>service</b> (mantém N tasks vivas atrás de um load balancer).</p>
+  <figure>
+    <svg viewBox="0 0 700 250" role="img" aria-label="Dois caminhos: API Gateway para Lambda, e ALB para serviço ECS com várias tasks">
+      <defs><marker id="ar3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="20" y="95" width="100" height="50" rx="8" class="bx"/><text x="70" y="125" text-anchor="middle">Cliente</text>
+      <path d="M120 110 L150 110 L150 55 L178 55" class="ln" marker-end="url(#ar3)"/>
+      <path d="M120 130 L150 130 L150 185 L178 185" class="ln" marker-end="url(#ar3)"/>
+      <rect x="180" y="30" width="140" height="50" rx="8" class="wn"/><text x="250" y="52" text-anchor="middle">API Gateway</text><text x="250" y="70" text-anchor="middle" class="sub">auth, throttling</text>
+      <line x1="320" y1="55" x2="378" y2="55" class="ln" marker-end="url(#ar3)"/>
+      <rect x="380" y="30" width="140" height="50" rx="8" class="ac"/><text x="450" y="52" text-anchor="middle">Lambda</text><text x="450" y="70" text-anchor="middle" class="sub">até 15 min</text>
+      <rect x="180" y="160" width="140" height="50" rx="8" class="wn"/><text x="250" y="182" text-anchor="middle">ALB</text><text x="250" y="200" text-anchor="middle" class="sub">health check</text>
+      <line x1="320" y1="185" x2="378" y2="185" class="ln" marker-end="url(#ar3)"/>
+      <rect x="380" y="130" width="300" height="110" rx="10" class="bx" stroke-dasharray="5 4"/>
+      <text x="395" y="150" class="sub">ECS service (Fargate) · auto scaling</text>
+      <rect x="395" y="165" width="85" height="55" rx="6" class="ac"/><text x="437" y="197" text-anchor="middle">task 1</text>
+      <rect x="490" y="165" width="85" height="55" rx="6" class="ac"/><text x="532" y="197" text-anchor="middle">task 2</text>
+      <rect x="585" y="165" width="85" height="55" rx="6" class="ac"/><text x="627" y="197" text-anchor="middle">task 3</text>
+    </svg>
+    <figcaption>Imagem Docker fica no ECR; o ECS puxa de lá a cada deploy.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <tr><th></th><th>Lambda</th><th>ECS Fargate</th></tr>
+    <tr><td>Unidade</td><td>Função</td><td>Container (imagem Docker)</td></tr>
+    <tr><td>Duração máxima</td><td>15 minutos</td><td>Sem limite</td></tr>
+    <tr><td>Cobrança</td><td>Por invocação e milissegundo</td><td>Por vCPU e memória enquanto roda</td></tr>
+    <tr><td>Bom para</td><td>Eventos, carga irregular, colas entre serviços</td><td>APIs com tráfego constante, workers longos, muitas conexões</td></tr>
+    <tr><td>Cuidado</td><td>Cold start, conexões com banco (use RDS Proxy)</td><td>Você cuida de imagem, health check e scaling</td></tr>
+  </table></div>
+  <div class="code-label">Dockerfile · empacotando a API para o ECS</div>
+<pre>FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</pre>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Quando você escolhe Lambda e quando escolhe ECS?</summary><p>Lambda para processamento por evento, curto e com carga irregular: paga só o que usa e escala sozinha. ECS para serviço sempre ligado, processos longos, tráfego constante (onde Lambda fica mais caro) ou quando preciso de controle do runtime.</p></details>
+    <details><summary>REST API ou HTTP API no API Gateway?</summary><p>HTTP API é mais barata e mais rápida, ideal para a maioria dos casos com JWT. REST API tem recursos extras: usage plans com API keys, validação de request, cache e integração direta com serviços AWS.</p></details>
+    <details><summary>Como o ECS sabe que uma task está saudável?</summary><p>Pelo health check do target group do ALB (por exemplo <code>GET /health</code>). Se falhar repetidamente, o ECS mata a task e sobe outra.</p></details>
+  </div>
+  <div class="check" data-mod="m3">
+    <label><input type="checkbox" id="m3a"> Fiz deploy de uma Lambda atrás do API Gateway</label>
+    <label><input type="checkbox" id="m3b"> Publiquei uma imagem no ECR</label>
+    <label><input type="checkbox" id="m3c"> Rodei um service no ECS Fargate com ALB</label>
+  </div>
+</section>
+
+<!-- IAM -->
+<section class="mod" id="m4">
+  <div class="mod-head"><span class="eyebrow">Semana 3</span><h2>IAM e segurança</h2>
+  <div class="tags"><span class="tag">roles</span><span class="tag">policies</span><span class="tag">menor privilégio</span><span class="tag">KMS</span><span class="tag">Secrets Manager</span></div></div>
+  <p>Toda chamada na AWS responde à pergunta: <b>quem</b> (principal) pode fazer <b>o quê</b> (action) em <b>qual recurso</b> (resource). Serviços não usam usuários com chave fixa: eles assumem uma <b>role</b> e recebem credenciais temporárias.</p>
+  <figure>
+    <svg viewBox="0 0 700 170" role="img" aria-label="Lambda assume uma role, que tem policy permitindo gravar só num prefixo do bucket">
+      <defs><marker id="ar4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="20" y="55" width="130" height="56" rx="8" class="ac"/><text x="85" y="80" text-anchor="middle">Lambda</text><text x="85" y="98" text-anchor="middle" class="sub">quem</text>
+      <line x1="150" y1="83" x2="208" y2="83" class="ln" marker-end="url(#ar4)"/><text x="179" y="73" text-anchor="middle" class="sub">assume</text>
+      <rect x="210" y="40" width="250" height="86" rx="8" class="wn"/><text x="335" y="64" text-anchor="middle">Role + policy</text>
+      <text x="335" y="86" text-anchor="middle" class="sub">Allow s3:PutObject</text><text x="335" y="104" text-anchor="middle" class="sub">em bronze/pedidos/*</text>
+      <line x1="460" y1="83" x2="518" y2="83" class="ln" marker-end="url(#ar4)"/>
+      <rect x="520" y="55" width="160" height="56" rx="8" class="bx"/><text x="600" y="80" text-anchor="middle">Bucket S3</text><text x="600" y="98" text-anchor="middle" class="sub">qual recurso</text>
+      <text x="20" y="155" class="sub">Tudo o que não está explicitamente permitido é negado. Um Deny explícito sempre vence um Allow.</text>
+    </svg>
+  </figure>
+  <div class="code-label">policy.json · menor privilégio</div>
+<pre>{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:PutObject"],
+    "Resource": "arn:aws:s3:::meu-lake/bronze/pedidos/*"
+  }]
+}</pre>
+  <ul>
+    <li><b>Identity policy</b>: anexada à role ou usuário (o que ele pode fazer).</li>
+    <li><b>Resource policy</b>: anexada ao recurso, como uma bucket policy (quem pode acessá-lo). Necessária para acesso entre contas.</li>
+    <li><b>Segredos</b>: senhas de banco ficam no Secrets Manager e nunca no código ou no repositório.</li>
+    <li><b>Criptografia</b>: S3 e RDS com chave KMS; tráfego com TLS.</li>
+  </ul>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Como uma task do ECS acessa o S3 sem chave de acesso?</summary><p>Com uma <b>task role</b>. O ECS entrega credenciais temporárias ao container e o boto3 as encontra sozinho. A <b>execution role</b> é outra coisa: é usada pelo ECS para puxar a imagem do ECR e ler segredos.</p></details>
+    <details><summary>Como dar acesso a um bucket para outra conta AWS?</summary><p>Uma bucket policy permitindo o principal da outra conta e, na outra conta, uma policy na role permitindo a ação. As duas pontas precisam concordar. Outra opção é a outra conta assumir uma role na sua conta.</p></details>
+  </div>
+  <div class="check" data-mod="m4">
+    <label><input type="checkbox" id="m4a"> Escrevi uma policy restrita a um prefixo do S3</label>
+    <label><input type="checkbox" id="m4b"> Sei a diferença entre task role e execution role</label>
+    <label><input type="checkbox" id="m4c"> Guardei uma senha no Secrets Manager e li via código</label>
+  </div>
+</section>
+
+<!-- EVENTOS -->
+<section class="mod" id="m5">
+  <div class="mod-head"><span class="eyebrow">Semana 4 · maior peso</span><h2>Eventos e arquitetura distribuída</h2>
+  <div class="tags"><span class="tag">SNS</span><span class="tag">SQS</span><span class="tag">EventBridge</span><span class="tag">Kinesis</span><span class="tag">DLQ</span><span class="tag">idempotência</span></div></div>
+  <p>Em vez de um sistema chamar o outro diretamente, ele publica um fato ("pedido criado") e quem tiver interesse consome. Isso desacopla times e absorve picos. A regra mais importante: a entrega é <b>at-least-once</b>, então uma mensagem pode chegar duas vezes e o consumidor precisa ser <b>idempotente</b>.</p>
+  <figure>
+    <svg viewBox="0 0 700 260" role="img" aria-label="Produtor publica no SNS, que distribui para duas filas SQS; falhas repetidas vão para a DLQ">
+      <defs><marker id="ar5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="10" y="100" width="120" height="56" rx="8" class="ac"/><text x="70" y="124" text-anchor="middle">API Pedidos</text><text x="70" y="142" text-anchor="middle" class="sub">produtor</text>
+      <line x1="130" y1="128" x2="168" y2="128" class="ln" marker-end="url(#ar5)"/>
+      <rect x="170" y="100" width="100" height="56" rx="8" class="wn"/><text x="220" y="124" text-anchor="middle">SNS</text><text x="220" y="142" text-anchor="middle" class="sub">fan-out</text>
+      <path d="M270 118 L295 118 L295 48 L318 48" class="ln" marker-end="url(#ar5)"/>
+      <path d="M270 138 L295 138 L295 208 L318 208" class="ln" marker-end="url(#ar5)"/>
+      <rect x="320" y="20" width="130" height="56" rx="8" class="wn"/><text x="385" y="44" text-anchor="middle">SQS faturamento</text><text x="385" y="62" text-anchor="middle" class="sub">fila</text>
+      <rect x="320" y="180" width="130" height="56" rx="8" class="wn"/><text x="385" y="204" text-anchor="middle">SQS data lake</text><text x="385" y="222" text-anchor="middle" class="sub">fila</text>
+      <line x1="450" y1="48" x2="508" y2="48" class="ln" marker-end="url(#ar5)"/>
+      <line x1="450" y1="208" x2="508" y2="208" class="ln" marker-end="url(#ar5)"/>
+      <rect x="510" y="20" width="170" height="56" rx="8" class="ac"/><text x="595" y="44" text-anchor="middle">Lambda</text><text x="595" y="62" text-anchor="middle" class="sub">idempotente</text>
+      <rect x="510" y="180" width="170" height="56" rx="8" class="ac"/><text x="595" y="204" text-anchor="middle">Firehose → S3</text><text x="595" y="222" text-anchor="middle" class="sub">camada bronze</text>
+      <line x1="385" y1="76" x2="385" y2="98" class="ln" marker-end="url(#ar5)" stroke-dasharray="4 3"/>
+      <rect x="330" y="100" width="110" height="50" rx="8" class="bd"/><text x="385" y="122" text-anchor="middle">DLQ</text><text x="385" y="139" text-anchor="middle" class="sub">falhou 3x</text>
+    </svg>
+    <figcaption>Um evento, dois consumidores independentes. Se o faturamento cair, o data lake continua recebendo.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <tr><th>Serviço</th><th>Modelo</th><th>Use quando</th></tr>
+    <tr><td>SQS</td><td>Fila: cada mensagem é processada por um consumidor e some</td><td>Distribuir trabalho, amortecer picos</td></tr>
+    <tr><td>SNS</td><td>Pub/sub: uma mensagem vai para vários assinantes</td><td>Fan-out para filas, e-mail, Lambda</td></tr>
+    <tr><td>EventBridge</td><td>Barramento com regras por conteúdo do evento</td><td>Integração entre domínios, SaaS, agendamento</td></tr>
+    <tr><td>Kinesis / MSK</td><td>Stream ordenado, retido e relido</td><td>Alto volume, ordem por chave, vários leitores, replay</td></tr>
+  </table></div>
+  <div class="code-label">consumer.py · consumidor SQS idempotente com falha parcial do lote</div>
+<pre>import json, boto3
+from botocore.exceptions import ClientError
+
+tabela = boto3.resource("dynamodb").Table("eventos_processados")
+
+def ja_processado(evento_id: str) -&gt; bool:
+    try:
+        <span class="c"># grava só se o id ainda não existir (escrita condicional, atômica)</span>
+        tabela.put_item(Item={"id": evento_id},
+                        ConditionExpression="attribute_not_exists(id)")
+        return False
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+            return True
+        raise
+
+def handler(event, context):
+    falhas = []
+    for record in event["Records"]:
+        try:
+            msg = json.loads(record["body"])
+            if ja_processado(msg["evento_id"]):
+                continue                     <span class="c"># duplicata: ignora sem erro</span>
+            faturar(msg)
+        except Exception:
+            falhas.append({"itemIdentifier": record["messageId"]})
+    <span class="c"># só as mensagens com erro voltam para a fila (ReportBatchItemFailures)</span>
+    return {"batchItemFailures": falhas}</pre>
+  <p class="tip"><b>Atenção:</b> nesse exemplo, se <code>faturar</code> falhar depois do registro, o retry vai achar o id e pular. Em produção, marque como processado só depois do sucesso, ou use status (<code>EM_ANDAMENTO</code> → <code>OK</code>) com expiração. Mencionar esse detalhe na entrevista mostra maturidade.</p>
+  <h3>Padrões que você precisa conhecer</h3>
+  <ul>
+    <li><b>Outbox</b>: grava o dado e o evento na mesma transação do banco; um processo separado publica o evento. Evita o caso "salvou no banco, mas não publicou".</li>
+    <li><b>Saga</b>: transação distribuída em passos, cada passo com uma ação de compensação (cancelar reserva se o pagamento falhar). Step Functions orquestra bem.</li>
+    <li><b>CQRS</b>: modelo de escrita separado do modelo de leitura, sincronizados por eventos.</li>
+    <li><b>Consistência eventual</b>: os sistemas convergem depois de um tempo, não no mesmo instante.</li>
+  </ul>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Como evitar processar o mesmo evento duas vezes?</summary><p>Cada evento tem um id único. O consumidor registra o id no DynamoDB com escrita condicional (<code>attribute_not_exists</code>). Se a escrita falhar por condição, é duplicata e ele ignora. Também é possível desenhar a operação para ser naturalmente idempotente (um upsert em vez de um insert).</p></details>
+    <details><summary>O que é visibility timeout no SQS?</summary><p>Quando um consumidor lê a mensagem, ela fica invisível por esse tempo. Se ele não apagar a mensagem a tempo, ela volta para a fila. Deve ser maior que o tempo de processamento (na Lambda, recomenda-se 6x o timeout da função).</p></details>
+    <details><summary>Quando a ordem das mensagens importa, o que você usa?</summary><p>SQS FIFO com <code>MessageGroupId</code> (ordem por grupo, por exemplo por cliente) ou Kinesis com partition key. Ordem global costuma ser desnecessária e cara; ordem por entidade basta.</p></details>
+  </div>
+  <div class="check" data-mod="m5">
+    <label><input type="checkbox" id="m5a"> Montei SNS → duas SQS → Lambda</label>
+    <label><input type="checkbox" id="m5b"> Configurei DLQ e reprocessei mensagens dela</label>
+    <label><input type="checkbox" id="m5c"> Implementei idempotência com DynamoDB</label>
+    <label><input type="checkbox" id="m5d"> Sei explicar outbox e saga</label>
+  </div>
+</section>
+
+<!-- BANCOS -->
+<section class="mod" id="m6">
+  <div class="mod-head"><span class="eyebrow">Semana 5</span><h2>Bancos relacionais e NoSQL</h2>
+  <div class="tags"><span class="tag">Postgres / RDS</span><span class="tag">SQL avançado</span><span class="tag">DynamoDB</span><span class="tag">modelagem</span></div></div>
+  <p>Relacional quando os dados têm relações e você não sabe todas as consultas de antemão. NoSQL (DynamoDB) quando você conhece os padrões de acesso e precisa de escala e latência previsível. No DynamoDB, você modela a partir das perguntas, não das entidades.</p>
+  <figure>
+    <svg viewBox="0 0 700 190" role="img" aria-label="Tabela DynamoDB com partition key e sort key">
+      <text x="20" y="24" font-weight="600">DynamoDB single-table: pedidos por cliente</text>
+      <rect x="20" y="38" width="660" height="34" class="wn"/>
+      <text x="35" y="60" font-weight="600">PK (partition)</text><text x="215" y="60" font-weight="600">SK (sort)</text><text x="425" y="60" font-weight="600">atributos</text>
+      <rect x="20" y="72" width="660" height="34" class="bx"/><text x="35" y="94">CLIENTE#42</text><text x="215" y="94">PERFIL</text><text x="425" y="94" class="sub">nome, email</text>
+      <rect x="20" y="106" width="660" height="34" class="bx"/><text x="35" y="128">CLIENTE#42</text><text x="215" y="128">PEDIDO#2026-11-01</text><text x="425" y="128" class="sub">valor=120, status=pago</text>
+      <rect x="20" y="140" width="660" height="34" class="bx"/><text x="35" y="162">CLIENTE#42</text><text x="215" y="162">PEDIDO#2026-11-09</text><text x="425" y="162" class="sub">valor=80, status=novo</text>
+    </svg>
+    <figcaption>Uma única consulta (PK = CLIENTE#42, SK começa com PEDIDO#) traz os pedidos do cliente em ordem de data.</figcaption>
+  </figure>
+  <div class="code-label">SQL · window functions e CTE (cai muito em teste técnico)</div>
+<pre><span class="c">-- último pedido de cada cliente e variação em relação ao anterior</span>
+WITH ordenados AS (
+  SELECT cliente_id, pedido_id, valor, criado_em,
+         ROW_NUMBER() OVER (PARTITION BY cliente_id ORDER BY criado_em DESC) AS rn,
+         LAG(valor)   OVER (PARTITION BY cliente_id ORDER BY criado_em)      AS valor_anterior
+  FROM pedidos
+)
+SELECT cliente_id, pedido_id, valor, valor - valor_anterior AS variacao
+FROM ordenados
+WHERE rn = 1;</pre>
+  <div class="code-label">Python · consulta no DynamoDB pela chave</div>
+<pre>from boto3.dynamodb.conditions import Key
+resp = tabela.query(
+    KeyConditionExpression=Key("PK").eq("CLIENTE#42") &amp; Key("SK").begins_with("PEDIDO#"),
+    ScanIndexForward=False,   <span class="c"># mais recentes primeiro</span>
+    Limit=10,
+)</pre>
+  <div class="tbl"><table>
+    <tr><th></th><th>Postgres (RDS / Aurora)</th><th>DynamoDB</th></tr>
+    <tr><td>Consultas</td><td>Livres, com joins</td><td>Por chave e índices (GSI) planejados</td></tr>
+    <tr><td>Transações</td><td>ACID completo</td><td>Transações limitadas (até 100 itens)</td></tr>
+    <tr><td>Escala</td><td>Vertical e réplicas de leitura</td><td>Horizontal, praticamente ilimitada</td></tr>
+    <tr><td>Exemplo</td><td>Cadastro, financeiro, relatórios</td><td>Sessões, idempotência, carrinho, IoT</td></tr>
+  </table></div>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Por que evitar <code>Scan</code> no DynamoDB?</summary><p>O Scan lê a tabela inteira e cobra por tudo que leu. Use <code>Query</code> por partition key ou crie um GSI para o padrão de acesso que falta.</p></details>
+    <details><summary>Uma query no Postgres está lenta. O que você faz?</summary><p>Rodo <code>EXPLAIN ANALYZE</code>, procuro seq scan em tabela grande, crio índice nas colunas de filtro e join, reviso <code>SELECT *</code>, verifico estatísticas (<code>ANALYZE</code>) e, se for leitura pesada, considero réplica de leitura ou view materializada.</p></details>
+  </div>
+  <div class="check" data-mod="m6">
+    <label><input type="checkbox" id="m6a"> Resolvi 5 exercícios de window function</label>
+    <label><input type="checkbox" id="m6b"> Modelei uma tabela DynamoDB a partir dos padrões de acesso</label>
+    <label><input type="checkbox" id="m6c"> Usei EXPLAIN para otimizar uma query</label>
+  </div>
+</section>
+
+<!-- DADOS -->
+<section class="mod" id="m7">
+  <div class="mod-head"><span class="eyebrow">Semana 6</span><h2>Dados: S3, Glue, EMR e Athena</h2>
+  <div class="tags"><span class="tag">medallion</span><span class="tag">Parquet</span><span class="tag">Iceberg</span><span class="tag">PySpark</span><span class="tag">particionamento</span></div></div>
+  <p>O data lake no S3 é organizado em camadas. <b>Bronze</b> guarda o dado bruto como chegou (permite reprocessar). <b>Silver</b> é limpo, tipado e sem duplicatas. <b>Gold</b> traz as tabelas de negócio prontas para consumo. O Glue Data Catalog guarda os schemas; o Athena consulta com SQL.</p>
+  <figure>
+    <svg viewBox="0 0 700 180" role="img" aria-label="Fluxo medallion bronze, silver, gold com Glue e Athena">
+      <defs><marker id="ar7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="10" y="40" width="150" height="70" rx="8" class="wn"/><text x="85" y="68" text-anchor="middle">Bronze</text><text x="85" y="88" text-anchor="middle" class="sub">JSON bruto</text>
+      <line x1="160" y1="75" x2="218" y2="75" class="ln" marker-end="url(#ar7)"/><text x="189" y="64" text-anchor="middle" class="sub">Glue</text>
+      <rect x="220" y="40" width="150" height="70" rx="8" class="bx"/><text x="295" y="68" text-anchor="middle">Silver</text><text x="295" y="88" text-anchor="middle" class="sub">Parquet / Iceberg</text>
+      <line x1="370" y1="75" x2="428" y2="75" class="ln" marker-end="url(#ar7)"/><text x="399" y="64" text-anchor="middle" class="sub">Glue / EMR</text>
+      <rect x="430" y="40" width="150" height="70" rx="8" class="ac"/><text x="505" y="68" text-anchor="middle">Gold</text><text x="505" y="88" text-anchor="middle" class="sub">métricas de negócio</text>
+      <line x1="580" y1="75" x2="618" y2="75" class="ln" marker-end="url(#ar7)"/>
+      <rect x="620" y="40" width="70" height="70" rx="8" class="bx"/><text x="655" y="80" text-anchor="middle">Athena</text>
+      <text x="10" y="150" class="sub">Caminho no S3: s3://lake/silver/pedidos/dt=2026-11-10/part-0001.parquet  (partição por data)</text>
+    </svg>
+  </figure>
+  <div class="code-label">job_silver.py · Glue / EMR em PySpark</div>
+<pre>from pyspark.sql import SparkSession, functions as F, Window
+
+spark = SparkSession.builder.getOrCreate()
+bruto = spark.read.json("s3://lake/bronze/pedidos/dt=2026-11-10/")
+
+<span class="c"># dedup: fica a versão mais recente de cada pedido</span>
+w = Window.partitionBy("id").orderBy(F.col("atualizado_em").desc())
+silver = (bruto
+    .withColumn("valor", F.col("valor").cast("decimal(12,2)"))
+    .filter(F.col("valor") &gt; 0)
+    .withColumn("rn", F.row_number().over(w)).filter("rn = 1").drop("rn")
+    .withColumn("dt", F.to_date("criado_em")))
+
+(silver.write.mode("overwrite")
+    .partitionBy("dt")
+    .parquet("s3://lake/silver/pedidos/"))</pre>
+  <div class="code-label">Athena · consulta que lê só uma partição</div>
+<pre>SELECT cliente_id, SUM(valor) AS total
+FROM silver.pedidos
+WHERE dt = DATE '2026-11-10'      <span class="c">-- filtro na partição: lê pouco, paga pouco</span>
+GROUP BY cliente_id;</pre>
+  <div class="tbl"><table>
+    <tr><th>Serviço</th><th>Use quando</th><th>Ponto de atenção</th></tr>
+    <tr><td>Glue</td><td>ETL serverless, integrado ao catálogo</td><td>Custo por DPU; use job bookmarks para incremental</td></tr>
+    <tr><td>EMR / EMR Serverless</td><td>Volume grande, tuning fino, carga constante</td><td>Instâncias spot reduzem muito o custo</td></tr>
+    <tr><td>Athena</td><td>SQL ad hoc sobre o S3</td><td>Cobra por dado lido: Parquet e partição</td></tr>
+    <tr><td>Iceberg</td><td>Tabelas com update, delete, time travel</td><td>Rodar compactação periódica</td></tr>
+  </table></div>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>O que é o problema dos arquivos pequenos e como resolver?</summary><p>Milhares de arquivos de poucos KB deixam Spark e Athena lentos (abrir arquivo custa mais que ler). Resolva com <code>coalesce</code> ou <code>repartition</code> antes de gravar, buffer maior no Firehose e compactação periódica (no Iceberg, <code>OPTIMIZE</code> ou rewrite_data_files). O alvo é arquivos de 128 MB a 1 GB.</p></details>
+    <details><summary>Como tornar um pipeline idempotente?</summary><p>Reprocessar a mesma data deve dar o mesmo resultado: sobrescrever a partição (<code>overwrite</code> dinâmico) ou fazer <code>MERGE</code> por chave no Iceberg, nunca apenas <code>append</code> cego.</p></details>
+  </div>
+  <div class="check" data-mod="m7">
+    <label><input type="checkbox" id="m7a"> Rodei um job Glue de bronze para silver</label>
+    <label><input type="checkbox" id="m7b"> Consultei uma tabela particionada no Athena</label>
+    <label><input type="checkbox" id="m7c"> Criei uma tabela Iceberg e usei MERGE</label>
+  </div>
+</section>
+
+<!-- CICD -->
+<section class="mod" id="m8">
+  <div class="mod-head"><span class="eyebrow">Semana 7</span><h2>Git, CI/CD e Terraform</h2>
+  <div class="tags"><span class="tag">Git</span><span class="tag">GitHub Actions</span><span class="tag">Terraform</span><span class="tag">OIDC</span><span class="tag">deploy</span></div></div>
+  <p>Nada vai para produção pela mão. O código passa pela esteira: testes, build, plano de infraestrutura revisado no pull request e deploy automático. A infraestrutura também é código (Terraform), versionada no Git, então dá para revisar, repetir e desfazer.</p>
+  <figure>
+    <svg viewBox="0 0 700 120" role="img" aria-label="Esteira: push, testes, build ECR, terraform plan, aprovação, deploy">
+      <defs><marker id="ar8" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="5" y="30" width="90" height="50" rx="8" class="bx"/><text x="50" y="60" text-anchor="middle">Push / PR</text>
+      <line x1="95" y1="55" x2="113" y2="55" class="ln" marker-end="url(#ar8)"/>
+      <rect x="115" y="30" width="100" height="50" rx="8" class="ac"/><text x="165" y="60" text-anchor="middle">Lint + testes</text>
+      <line x1="215" y1="55" x2="233" y2="55" class="ln" marker-end="url(#ar8)"/>
+      <rect x="235" y="30" width="100" height="50" rx="8" class="ac"/><text x="285" y="60" text-anchor="middle">Build → ECR</text>
+      <line x1="335" y1="55" x2="353" y2="55" class="ln" marker-end="url(#ar8)"/>
+      <rect x="355" y="30" width="110" height="50" rx="8" class="ac"/><text x="410" y="60" text-anchor="middle">tf plan</text>
+      <line x1="465" y1="55" x2="483" y2="55" class="ln" marker-end="url(#ar8)"/>
+      <rect x="485" y="30" width="90" height="50" rx="8" class="wn"/><text x="530" y="60" text-anchor="middle">Aprovação</text>
+      <line x1="575" y1="55" x2="593" y2="55" class="ln" marker-end="url(#ar8)"/>
+      <rect x="595" y="30" width="100" height="50" rx="8" class="ac"/><text x="645" y="60" text-anchor="middle">Deploy prod</text>
+      <text x="5" y="108" class="sub">GitHub assume uma role na AWS via OIDC: nenhuma chave de acesso guardada no repositório.</text>
+    </svg>
+  </figure>
+  <div class="code-label">.github/workflows/deploy.yml</div>
+<pre>name: deploy
+on:
+  push: { branches: [main] }
+  pull_request:
+permissions:
+  id-token: write        <span class="c"># necessário para OIDC</span>
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt ruff pytest
+      - run: ruff check . &amp;&amp; pytest -q
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: producao  <span class="c"># exige aprovação manual configurada no GitHub</span>
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/github-deploy
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=infra init &amp;&amp; terraform -chdir=infra apply -auto-approve</pre>
+  <div class="code-label">infra/main.tf · fila com DLQ em Terraform</div>
+<pre>resource "aws_sqs_queue" "faturamento_dlq" {
+  name = "faturamento-dlq"
+}
+
+resource "aws_sqs_queue" "faturamento" {
+  name                       = "faturamento"
+  visibility_timeout_seconds = 180
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.faturamento_dlq.arn
+    maxReceiveCount     = 3
+  })
+}</pre>
+  <ul>
+    <li><b>Git</b>: branch curta por tarefa, pull request com revisão, <code>rebase</code> para histórico limpo, <code>merge</code> para preservar contexto. Trunk-based é o padrão em times com CI forte.</li>
+    <li><b>Terraform state</b>: fica remoto (S3 com lock) e nunca é editado à mão. <code>plan</code> mostra o que vai mudar; <code>apply</code> executa.</li>
+    <li><b>Estratégias de deploy</b>: rolling (padrão do ECS), blue/green (troca de uma vez, rollback instantâneo) e canary (uma fatia do tráfego primeiro).</li>
+  </ul>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Descreva uma esteira ideal para um microsserviço.</summary><p>No PR: lint, testes, build da imagem e <code>terraform plan</code> comentado no PR. No merge: push da imagem com tag do commit, deploy automático em dev, testes de fumaça, aprovação e deploy canary em produção, com rollback automático se os alarmes dispararem.</p></details>
+    <details><summary>Por que OIDC em vez de access key no GitHub?</summary><p>A access key é permanente e vaza. Com OIDC, o GitHub recebe credenciais temporárias de uma role que só confia naquele repositório e branch.</p></details>
+  </div>
+  <div class="check" data-mod="m8">
+    <label><input type="checkbox" id="m8a"> Criei uma esteira no GitHub Actions com testes</label>
+    <label><input type="checkbox" id="m8b"> Provisionei recursos com Terraform e state remoto</label>
+    <label><input type="checkbox" id="m8c"> Configurei OIDC entre GitHub e AWS</label>
+  </div>
+</section>
+
+<!-- OBSERVABILIDADE -->
+<section class="mod" id="m9">
+  <div class="mod-head"><span class="eyebrow">Semana 8 · diferencial</span><h2>Observabilidade, DataOps e produção</h2>
+  <div class="tags"><span class="tag">CloudWatch</span><span class="tag">X-Ray</span><span class="tag">alarmes</span><span class="tag">SLO</span><span class="tag">qualidade de dados</span></div></div>
+  <p>Observabilidade é conseguir responder "o que está acontecendo e por quê" sem fazer deploy de código novo. São três pilares: <b>logs</b> (o que aconteceu), <b>métricas</b> (quanto e com que frequência) e <b>traces</b> (o caminho de uma requisição entre serviços).</p>
+  <figure>
+    <svg viewBox="0 0 700 150" role="img" aria-label="Três pilares da observabilidade levando a alarmes e runbook">
+      <defs><marker id="ar9" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="10" y="20" width="150" height="50" rx="8" class="ac"/><text x="85" y="42" text-anchor="middle">Logs</text><text x="85" y="60" text-anchor="middle" class="sub">JSON no CloudWatch</text>
+      <rect x="10" y="80" width="150" height="50" rx="8" class="ac"/><text x="85" y="102" text-anchor="middle">Métricas</text><text x="85" y="120" text-anchor="middle" class="sub">erros, latência, fila</text>
+      <rect x="180" y="50" width="150" height="50" rx="8" class="ac"/><text x="255" y="72" text-anchor="middle">Traces</text><text x="255" y="90" text-anchor="middle" class="sub">X-Ray / OTel</text>
+      <path d="M160 45 L360 45 L360 65 L388 65" class="ln" marker-end="url(#ar9)"/>
+      <path d="M160 105 L360 105 L360 85 L388 85" class="ln" marker-end="url(#ar9)"/>
+      <rect x="390" y="50" width="130" height="50" rx="8" class="bd"/><text x="455" y="72" text-anchor="middle">Alarme</text><text x="455" y="90" text-anchor="middle" class="sub">DLQ &gt; 0</text>
+      <line x1="520" y1="75" x2="548" y2="75" class="ln" marker-end="url(#ar9)"/>
+      <rect x="550" y="50" width="140" height="50" rx="8" class="wn"/><text x="620" y="72" text-anchor="middle">Runbook</text><text x="620" y="90" text-anchor="middle" class="sub">passos de correção</text>
+    </svg>
+  </figure>
+  <div class="tbl"><table>
+    <tr><th>O que monitorar</th><th>Métrica</th><th>Alarme sugerido</th></tr>
+    <tr><td>API</td><td>Taxa de 5xx, latência p99</td><td>5xx &gt; 1% por 5 min</td></tr>
+    <tr><td>Fila SQS</td><td><code>ApproximateAgeOfOldestMessage</code></td><td>Mensagem mais antiga &gt; 10 min</td></tr>
+    <tr><td>DLQ</td><td>Mensagens visíveis</td><td>Qualquer valor &gt; 0</td></tr>
+    <tr><td>Lambda</td><td>Errors, Throttles, Duration</td><td>Throttles &gt; 0</td></tr>
+    <tr><td>Pipeline de dados</td><td>Linhas processadas, atraso, qualidade</td><td>Job não terminou até 6h; nulos acima do limite</td></tr>
+  </table></div>
+  <div class="code-label">CloudWatch Logs Insights · erros por tipo na última hora</div>
+<pre>fields @timestamp, evento, erro
+| filter nivel = "ERROR"
+| stats count(*) as total by erro
+| sort total desc</pre>
+  <ul>
+    <li><b>SLI / SLO / SLA</b>: SLI é a medida (99,2% das requisições abaixo de 300 ms), SLO é a meta interna (99,5%), SLA é o compromisso com o cliente, com penalidade.</li>
+    <li><b>DataOps</b>: testes de qualidade no pipeline (Glue Data Quality ou Great Expectations), contratos de dados entre produtor e consumidor, linhagem e versionamento.</li>
+    <li><b>Operação</b>: runbook para cada alarme, post-mortem sem culpados, revisão de custo mensal.</li>
+  </ul>
+  <div class="qa"><h3>Na entrevista</h3>
+    <details><summary>Um pipeline falhou às 3h da manhã. O que você faz?</summary><p>O alarme dispara e eu sigo o runbook: vejo os logs e o trace para achar a causa, corrijo ou contorno, reprocesso a partir da camada bronze (que é imutável) com um job idempotente, confirmo a qualidade do resultado, aviso os consumidores e depois escrevo o post-mortem com ações para não repetir.</p></details>
+    <details><summary>Como você saberia que os dados estão errados antes do usuário perceber?</summary><p>Checagens automáticas no pipeline: volume de linhas fora do esperado, nulos em colunas obrigatórias, chaves duplicadas, valores fora do intervalo e atraso da partição. Uma falha bloqueia a publicação na gold e dispara alarme.</p></details>
+  </div>
+  <div class="check" data-mod="m9">
+    <label><input type="checkbox" id="m9a"> Criei alarmes para DLQ e erros de Lambda</label>
+    <label><input type="checkbox" id="m9b"> Ativei X-Ray num fluxo API → Lambda</label>
+    <label><input type="checkbox" id="m9c"> Adicionei uma checagem de qualidade num job</label>
+  </div>
+</section>
+
+<!-- PROJETO -->
+<section class="mod" id="m10">
+  <div class="mod-head"><span class="eyebrow">Fechamento</span><h2>Projeto de portfólio: plataforma de ingestão de eventos</h2></div>
+  <p>Junte tudo num repositório público. Ele vira a sua resposta para "me conte de um projeto": você mostra o código, o diagrama e explica cada decisão. Construa aos poucos, um módulo por semana.</p>
+  <figure>
+    <svg viewBox="0 0 700 250" role="img" aria-label="Arquitetura completa do projeto de portfólio">
+      <defs><marker id="ar10" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="10" y="20" width="120" height="50" rx="8" class="wn"/><text x="70" y="50" text-anchor="middle">API Gateway</text>
+      <line x1="130" y1="45" x2="158" y2="45" class="ln" marker-end="url(#ar10)"/>
+      <rect x="160" y="20" width="140" height="50" rx="8" class="ac"/><text x="230" y="42" text-anchor="middle">ECS FastAPI</text><text x="230" y="60" text-anchor="middle" class="sub">valida + grava</text>
+      <line x1="300" y1="45" x2="338" y2="45" class="ln" marker-end="url(#ar10)"/>
+      <rect x="340" y="20" width="120" height="50" rx="8" class="bx"/><text x="400" y="42" text-anchor="middle">Postgres</text><text x="400" y="60" text-anchor="middle" class="sub">outbox</text>
+      <line x1="460" y1="45" x2="498" y2="45" class="ln" marker-end="url(#ar10)"/>
+      <rect x="500" y="20" width="180" height="50" rx="8" class="wn"/><text x="590" y="42" text-anchor="middle">EventBridge</text><text x="590" y="60" text-anchor="middle" class="sub">evento pedido_criado</text>
+      <path d="M590 70 L590 95 L230 95 L230 118" class="ln" marker-end="url(#ar10)"/>
+      <path d="M590 70 L590 118" class="ln" marker-end="url(#ar10)"/>
+      <rect x="160" y="120" width="140" height="50" rx="8" class="wn"/><text x="230" y="142" text-anchor="middle">SQS + DLQ</text><text x="230" y="160" text-anchor="middle" class="sub">notificações</text>
+      <line x1="300" y1="145" x2="338" y2="145" class="ln" marker-end="url(#ar10)"/>
+      <rect x="340" y="120" width="120" height="50" rx="8" class="ac"/><text x="400" y="142" text-anchor="middle">Lambda</text><text x="400" y="160" text-anchor="middle" class="sub">+ DynamoDB</text>
+      <rect x="500" y="120" width="180" height="50" rx="8" class="ac"/><text x="590" y="142" text-anchor="middle">Firehose → S3 bronze</text><text x="590" y="160" text-anchor="middle" class="sub">JSON particionado</text>
+      <line x1="590" y1="170" x2="590" y2="188" class="ln" marker-end="url(#ar10)"/>
+      <rect x="340" y="190" width="340" height="50" rx="8" class="bx"/><text x="510" y="212" text-anchor="middle">Glue → silver / gold (Iceberg) → Athena</text><text x="510" y="230" text-anchor="middle" class="sub">com checagens de qualidade</text>
+      <rect x="10" y="190" width="290" height="50" rx="8" class="bx" stroke-dasharray="5 4"/><text x="155" y="212" text-anchor="middle">Terraform · GitHub Actions</text><text x="155" y="230" text-anchor="middle" class="sub">CloudWatch · X-Ray · alarmes</text>
+    </svg>
+  </figure>
+  <div class="code-label">Estrutura sugerida do repositório</div>
+<pre>plataforma-eventos/
+├── services/
+│   ├── api-pedidos/        <span class="c"># FastAPI + Dockerfile + testes</span>
+│   └── notificador/        <span class="c"># Lambda consumidora SQS</span>
+├── jobs/
+│   ├── bronze_to_silver.py <span class="c"># PySpark</span>
+│   └── silver_to_gold.py
+├── infra/                  <span class="c"># Terraform: módulos por componente</span>
+│   ├── modules/{api,eventos,lake,observabilidade}
+│   └── envs/{dev,prod}
+├── docs/
+│   ├── arquitetura.png
+│   └── adr/                <span class="c"># decisões: 001-sqs-vs-kinesis.md ...</span>
+├── .github/workflows/
+└── README.md</pre>
+  <p class="tip"><b>Custo:</b> use a camada gratuita, Fargate Spot, desligue o ECS fora do uso (desired count 0) e rode <code>terraform destroy</code> quando terminar de estudar. Crie um alerta de orçamento (AWS Budgets) no primeiro dia.</p>
+  <div class="check" data-mod="m10">
+    <label><input type="checkbox" id="m10a"> Repositório público com README e diagrama</label>
+    <label><input type="checkbox" id="m10b"> Escrevi 3 ADRs explicando decisões</label>
+    <label><input type="checkbox" id="m10c"> Esteira verde do push ao deploy</label>
+    <label><input type="checkbox" id="m10d"> Consigo explicar o projeto em 3 minutos</label>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var boxes=[].slice.call(document.querySelectorAll('.check input[type=checkbox]'));
+  var KEY='roteiro-aws-progresso';
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){saved={}}
+  boxes.forEach(function(b){ if(saved[b.id]) b.checked=true; b.addEventListener('change',update); });
+  function update(){
+    var s={},n=0;
+    boxes.forEach(function(b){ if(b.checked){s[b.id]=1;n++} });
+    try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}
+    document.getElementById('pbar').style.width=(boxes.length?n/boxes.length*100:0)+'%';
+    document.getElementById('ptxt').textContent=n+' de '+boxes.length+' concluídos';
+  }
+  update();
+})();
+</script>
+
+</body></html>

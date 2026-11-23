@@ -1,0 +1,1183 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}</style></head><body>
+<title>Por Dentro do Spark e da AWS</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: índice lateral por área + fichas técnicas no formato situação → o que é → por que funciona → como usar → cuidado → entrevista */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --fg:#1a2229; --muted:#5b6773; --line:#dce1e6;
+  --accent:#2f5bb7; --accent-soft:#e6edfa; --ok:#13795b; --ok-soft:#e2f4ec; --warn:#9a4d0e; --warn-soft:#fbeedd; --bad:#a02c2c; --bad-soft:#fbe9e9;
+  --code-bg:#eff2f5;
+  --f-display:"Space Grotesk",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121619; --surface:#1a2025; --fg:#e3e8ec; --muted:#98a4ae; --line:#2b353c;
+  --accent:#8fb0f5; --accent-soft:#1d2a44; --ok:#6fd2ad; --ok-soft:#163328; --warn:#f0b36b; --warn-soft:#3a2a16; --bad:#f08f8f; --bad-soft:#3a1c1c; --code-bg:#151a1e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121619; --surface:#1a2025; --fg:#e3e8ec; --muted:#98a4ae; --line:#2b353c;
+  --accent:#8fb0f5; --accent-soft:#1d2a44; --ok:#6fd2ad; --ok-soft:#163328; --warn:#f0b36b; --warn-soft:#3a2a16; --bad:#f08f8f; --bad-soft:#3a1c1c; --code-bg:#151a1e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.65 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+.wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px}
+@media (max-width:860px){.wrap{grid-template-columns:minmax(0,1fr)}nav.idx{position:static!important;max-height:none!important}}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:clamp(28px,4vw,40px);font-weight:600}
+h2{font-size:24px;font-weight:600;padding-top:8px}
+h3{font-size:20px;font-weight:600}
+h4{font-size:13px;font-family:var(--f-mono);font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:70ch}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header.top{grid-column:1/-1;display:grid;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+header.top p{color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:8px;font-size:13px}
+.legend span{padding:2px 8px;border-radius:4px;background:var(--surface);border:1px solid var(--line)}
+nav.idx{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start;display:grid;gap:2px;max-height:calc(100vh - 40px);overflow-y:auto;padding-right:4px}
+nav.idx b{font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:12px 0 4px 10px}
+nav.idx a{padding:5px 10px;border-radius:6px;text-decoration:none;color:var(--fg);font-size:14px}
+nav.idx a:hover,nav.idx a:focus-visible{background:var(--surface);outline:none}
+main{display:grid;gap:28px;min-width:0}
+article.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;display:grid;gap:14px;min-width:0;scroll-margin-top:20px}
+@media (max-width:500px){article.card{padding:18px 16px}}
+.sit{background:var(--warn-soft);color:var(--fg);border-radius:8px;padding:10px 14px;font-size:15px}
+.sit b{color:var(--warn)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.blk{display:grid;gap:6px;min-width:0}
+.why{border-left:3px solid var(--accent);padding-left:14px}
+.care{border-left:3px solid var(--bad);padding-left:14px}
+figure{margin:0;border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;background:var(--bg)}
+figure svg{display:block;min-width:560px;width:100%;height:auto}
+figcaption{font-size:13px;color:var(--muted);margin-top:8px}
+svg text{font-family:var(--f-body);fill:var(--fg);font-size:14px}
+svg .sub{fill:var(--muted);font-size:12px}
+svg .bx{fill:var(--surface);stroke:var(--line)}
+svg .ac{fill:var(--accent-soft);stroke:var(--accent)}
+svg .ok{fill:var(--ok-soft);stroke:var(--ok)}
+svg .wn{fill:var(--warn-soft);stroke:var(--warn)}
+svg .bd{fill:var(--bad-soft);stroke:var(--bad)}
+svg .ln{stroke:var(--muted);stroke-width:1.3;fill:none}
+svg .lnb{stroke:var(--bad);stroke-width:1.3;fill:none}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font:13px/1.6 var(--f-mono)}
+code{font-family:var(--f-mono);font-size:.9em}
+p code,li code,td code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+.c{color:var(--muted)}
+ul,ol{margin:0;padding-left:20px;max-width:70ch}
+li+li{margin-top:4px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+details{border:1px solid var(--line);border-radius:8px;padding:10px 14px;background:var(--bg)}
+summary{cursor:pointer;font-weight:500}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+details p{margin-top:8px}
+.sec-head{display:grid;gap:6px;margin-top:12px}
+.sec-head p{color:var(--muted)}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">Fichas técnicas · o porquê de cada coisa</span>
+  <h1>Por Dentro do Spark e da AWS</h1>
+  <p>Cada ficha parte de uma situação real ("meu join está lento") e responde: o que é, por que funciona, como usar, onde dá errado e como explicar numa entrevista. É o nível de profundidade que separa quem usa a ferramenta de quem entende a ferramenta.</p>
+  <div class="legend"><span>Situação</span><span>O que é</span><span>Por que funciona</span><span>Como usar</span><span>Cuidado</span><span>Na entrevista</span></div>
+</header>
+
+<nav class="idx" aria-label="Índice">
+  <b>Spark: arquitetura</b>
+  <a href="#s1">Driver, Cluster Manager, Executors</a>
+  <a href="#s2">Job, Stage e Task</a>
+  <a href="#s3">Lazy evaluation e DAG</a>
+  <b>Spark: DataFrame e agrupamento</b>
+  <a href="#f1">RDD, DataFrame e Dataset</a>
+  <a href="#f2">Operações essenciais do DataFrame</a>
+  <a href="#f3">Catalyst e Tungsten</a>
+  <a href="#f4">groupBy e agg por dentro</a>
+  <a href="#f5">groupBy ou window function</a>
+  <a href="#f6">Schema, tipos e nulos</a>
+  <a href="#f7">Dedup e count distinct</a>
+  <b>Spark: performance</b>
+  <a href="#s4">Shuffle e transformações wide</a>
+  <a href="#s5">Partições: repartition e coalesce</a>
+  <a href="#s6">Broadcast join</a>
+  <a href="#s7">Sort-merge e outros joins</a>
+  <a href="#s8">Data skew e salting</a>
+  <a href="#s9">AQE (Adaptive Query Execution)</a>
+  <a href="#s10">Cache e persist</a>
+  <a href="#s11">Memória, spill e OOM</a>
+  <a href="#s12">UDF Python lenta</a>
+  <b>Armazenamento</b>
+  <a href="#a1">Parquet e formato colunar</a>
+  <a href="#a2">Predicate pushdown e pruning</a>
+  <a href="#a3">Arquivos pequenos</a>
+  <a href="#a4">Particionamento vs bucketing</a>
+  <a href="#a5">Iceberg e table formats</a>
+  <b>AWS</b>
+  <a href="#w1">Cold start na Lambda</a>
+  <a href="#w2">Visibility timeout no SQS</a>
+  <a href="#w3">Hot partition no DynamoDB</a>
+  <a href="#w4">Athena cara e lenta</a>
+  <a href="#w5">Lambda esgota conexões do RDS</a>
+  <b>Sistemas distribuídos</b>
+  <a href="#d1">Backpressure</a>
+  <a href="#d2">Retry com backoff e jitter</a>
+  <a href="#d3">Índices no banco relacional</a>
+  <b>Treino</b>
+  <a href="#dicas">Dicas para a entrevista</a>
+  <a href="#simulado">Simulado (30 questões)</a>
+  <a href="#casos">Casos abertos</a>
+</nav>
+
+<main>
+
+<div class="sec-head" id="spark"><span class="eyebrow">Parte 1</span><h2>Spark: arquitetura</h2><p>Antes de otimizar qualquer coisa, entenda quem faz o quê quando você roda um job.</p></div>
+
+<!-- S1 -->
+<article class="card" id="s1">
+  <h3>Driver Program, Cluster Manager e Executors</h3>
+  <p class="sit"><b>Situação:</b> você roda <code>spark-submit job.py</code>. O que acontece por baixo, e por que nessa ordem?</p>
+  <figure>
+    <svg viewBox="0 0 700 300" role="img" aria-label="Driver pede recursos ao Cluster Manager, que inicia Executors nos workers; Driver envia tasks aos Executors">
+      <defs><marker id="m1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="20" y="110" width="170" height="80" rx="10" class="ac"/>
+      <text x="105" y="138" text-anchor="middle" font-weight="600">Driver</text>
+      <text x="105" y="158" text-anchor="middle" class="sub">SparkSession, plano</text>
+      <text x="105" y="176" text-anchor="middle" class="sub">agenda as tasks</text>
+      <line x1="190" y1="130" x2="268" y2="70" class="ln" marker-end="url(#m1)"/>
+      <text x="210" y="88" class="sub">1 pede</text>
+      <rect x="270" y="30" width="170" height="70" rx="10" class="wn"/>
+      <text x="355" y="58" text-anchor="middle" font-weight="600">Cluster Manager</text>
+      <text x="355" y="80" text-anchor="middle" class="sub">YARN · K8s · Standalone</text>
+      <line x1="440" y1="65" x2="498" y2="65" class="ln" marker-end="url(#m1)"/>
+      <text x="446" y="56" class="sub">2 aloca</text>
+      <rect x="500" y="20" width="185" height="270" rx="12" class="bx" stroke-dasharray="5 4"/>
+      <text x="592" y="42" text-anchor="middle" class="sub">Worker nodes</text>
+      <rect x="515" y="55" width="155" height="66" rx="8" class="ok"/><text x="592" y="80" text-anchor="middle" font-weight="600">Executor 1</text><text x="592" y="100" text-anchor="middle" class="sub">4 cores · cache</text>
+      <rect x="515" y="135" width="155" height="66" rx="8" class="ok"/><text x="592" y="160" text-anchor="middle" font-weight="600">Executor 2</text><text x="592" y="180" text-anchor="middle" class="sub">4 cores · cache</text>
+      <rect x="515" y="215" width="155" height="66" rx="8" class="ok"/><text x="592" y="240" text-anchor="middle" font-weight="600">Executor 3</text><text x="592" y="260" text-anchor="middle" class="sub">4 cores · cache</text>
+      <path d="M190 165 L360 165 L360 248 L513 248" class="ln" marker-end="url(#m1)"/>
+      <path d="M360 168 L513 168" class="ln" marker-end="url(#m1)"/>
+      <text x="215" y="200" class="sub">3 envia tasks direto</text>
+      <text x="215" y="218" class="sub">aos executors</text>
+      <path d="M513 98 L470 98 L470 140 L192 140" class="ln" marker-end="url(#m1)" stroke-dasharray="4 3"/>
+      <text x="300" y="132" class="sub">4 resultados / status</text>
+    </svg>
+    <figcaption>O Cluster Manager só participa no começo, para alocar recursos. Depois, Driver e Executors conversam direto.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>Driver</h4><p>O "cérebro". É o processo que roda o seu <code>main</code> e cria a <code>SparkSession</code>. Transforma o código num plano (DAG), quebra em stages e tasks, distribui as tasks e junta os resultados. Existe <b>um</b> por aplicação.</p></div>
+    <div class="blk"><h4>Cluster Manager</h4><p>O "RH do cluster". Não processa dado nenhum. Sabe quais máquinas têm CPU e memória livres e entrega recursos para o Driver. No EMR é o YARN; no Kubernetes é o próprio K8s; no Glue a AWS esconde isso de você.</p></div>
+    <div class="blk"><h4>Executors</h4><p>Os "braços". Processos JVM nas máquinas workers que executam as tasks, guardam dados em cache e gravam o shuffle. Cada executor tem N cores, e cada core roda uma task por vez.</p></div>
+  </div>
+  <div class="blk why"><h4>Por que nessa ordem</h4>
+    <ol>
+      <li>O <b>Driver</b> nasce primeiro porque é ele que sabe o que precisa ser feito e quantos recursos pedir.</li>
+      <li>O Driver pede ao <b>Cluster Manager</b>, porque só ele sabe onde há recursos livres. O Spark não quer reinventar o gerenciamento de máquinas.</li>
+      <li>O Cluster Manager sobe os <b>Executors</b> nos workers, que se registram no Driver.</li>
+      <li>A partir daí o Driver manda tasks direto aos Executors, sem intermediário, o que evita gargalo.</li>
+    </ol>
+  </div>
+  <div class="blk"><h4>Como usar</h4>
+<pre>spark-submit \
+  --deploy-mode cluster \          <span class="c"># driver roda dentro do cluster (produção)</span>
+  --num-executors 10 \
+  --executor-cores 4 \             <span class="c"># 4 tasks em paralelo por executor</span>
+  --executor-memory 16g \
+  --driver-memory 4g \
+  job.py
+<span class="c"># paralelismo total = 10 executors x 4 cores = 40 tasks ao mesmo tempo</span></pre></div>
+  <div class="blk care"><h4>Cuidado</h4>
+    <ul>
+      <li><code>collect()</code> traz <b>todos</b> os dados para o Driver. Com tabela grande, o Driver morre por falta de memória. Use <code>show()</code>, <code>take(n)</code> ou grave no S3.</li>
+      <li><code>--deploy-mode client</code> deixa o Driver na sua máquina: se ela desconectar, o job morre. Em produção use <code>cluster</code>.</li>
+      <li>Executor com cores demais (mais de 5) costuma piorar a vazão de I/O com o HDFS/S3. O padrão comum é 4 ou 5.</li>
+    </ul></div>
+  <details><summary>Na entrevista: "O que acontece se um executor morrer no meio do job?"</summary><p>O Driver percebe pela falta de heartbeat, pede outro executor ao Cluster Manager e reexecuta só as tasks perdidas. Ele consegue porque guarda a linhagem (lineage) de como cada partição foi calculada. Se o <b>Driver</b> morrer, a aplicação inteira falha, porque ele é o único que conhece o plano.</p></details>
+</article>
+
+<!-- S2 -->
+<article class="card" id="s2">
+  <h3>Job, Stage e Task</h3>
+  <p class="sit"><b>Situação:</b> você abre o Spark UI e vê "Job 3, Stage 7, 200 tasks". O que é cada coisa?</p>
+  <figure>
+    <svg viewBox="0 0 700 210" role="img" aria-label="Uma action gera um job, dividido em stages pelo shuffle, cada stage com uma task por partição">
+      <defs><marker id="m2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="10" y="10" width="680" height="190" rx="12" class="bx" stroke-dasharray="5 4"/>
+      <text x="25" y="32" font-weight="600">Job</text><text x="62" y="32" class="sub">= uma action (write, count, collect)</text>
+      <rect x="30" y="50" width="280" height="135" rx="10" class="ac"/>
+      <text x="45" y="72" font-weight="600">Stage 1</text><text x="110" y="72" class="sub">read → filter → select</text>
+      <rect x="45" y="90" width="60" height="38" rx="6" class="ok"/><text x="75" y="114" text-anchor="middle" class="sub">task</text>
+      <rect x="115" y="90" width="60" height="38" rx="6" class="ok"/><text x="145" y="114" text-anchor="middle" class="sub">task</text>
+      <rect x="185" y="90" width="60" height="38" rx="6" class="ok"/><text x="215" y="114" text-anchor="middle" class="sub">task</text>
+      <text x="45" y="160" class="sub">1 task por partição de entrada</text>
+      <line x1="310" y1="118" x2="388" y2="118" class="lnb" marker-end="url(#m2)"/>
+      <text x="349" y="108" text-anchor="middle" class="sub">shuffle</text>
+      <rect x="390" y="50" width="285" height="135" rx="10" class="ac"/>
+      <text x="405" y="72" font-weight="600">Stage 2</text><text x="470" y="72" class="sub">groupBy → agg → write</text>
+      <rect x="405" y="90" width="60" height="38" rx="6" class="ok"/><text x="435" y="114" text-anchor="middle" class="sub">task</text>
+      <rect x="475" y="90" width="60" height="38" rx="6" class="ok"/><text x="505" y="114" text-anchor="middle" class="sub">task</text>
+      <text x="405" y="160" class="sub">spark.sql.shuffle.partitions tasks</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>Job</h4><p>Disparado por cada <b>action</b>: <code>count()</code>, <code>write</code>, <code>collect()</code>, <code>show()</code>. Três actions no código geram três jobs.</p></div>
+    <div class="blk"><h4>Stage</h4><p>Um trecho do job que roda sem precisar trocar dados entre máquinas. Todo <b>shuffle</b> cria uma fronteira e começa um stage novo.</p></div>
+    <div class="blk"><h4>Task</h4><p>A menor unidade de trabalho: um stage aplicado a <b>uma partição</b>. 200 partições geram 200 tasks. Cada task ocupa um core.</p></div>
+  </div>
+  <div class="blk why"><h4>Por que dividir assim</h4><p>Dentro de um stage, o Spark encadeia as operações em sequência sobre a mesma partição (pipelining), sem gravar nada no meio. Isso é rápido. Só quando os dados precisam mudar de máquina (shuffle) ele é obrigado a parar, gravar em disco e começar outro stage.</p></div>
+  <details><summary>Na entrevista: "Um stage tem 200 tasks; 199 terminam em 10 s e uma leva 20 min. O que é?"</summary><p>Data skew: uma partição tem muito mais dados que as outras (uma chave concentra a maioria das linhas). A solução está nas fichas de skew e AQE.</p></details>
+</article>
+
+<!-- S3 -->
+<article class="card" id="s3">
+  <h3>Lazy evaluation e DAG</h3>
+  <p class="sit"><b>Situação:</b> você roda 10 linhas de transformação e nada acontece. Quando chega no <code>.write</code>, o job demora. Por quê?</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p><b>Transformações</b> (<code>filter</code>, <code>select</code>, <code>join</code>, <code>groupBy</code>) não executam nada: só anotam no plano. <b>Actions</b> (<code>write</code>, <code>count</code>, <code>collect</code>) disparam a execução. O plano é um DAG (grafo de passos sem ciclos).</p></div>
+    <div class="blk why"><h4>Por que funciona</h4><p>Vendo o plano inteiro antes de rodar, o otimizador Catalyst reordena e corta trabalho: empurra filtros para a leitura, lê só as colunas usadas e escolhe a estratégia de join. Se executasse linha a linha, não teria como otimizar.</p></div>
+  </div>
+<pre>df = spark.read.parquet("s3://lake/silver/pedidos/")
+df2 = df.filter("dt = '2026-11-10'").select("cliente_id", "valor")   <span class="c"># nada roda ainda</span>
+df2.explain(True)   <span class="c"># mostra o plano: veja PushedFilters e as colunas lidas</span>
+df2.write.parquet("s3://lake/gold/x/")                              <span class="c"># agora roda</span></pre>
+  <div class="blk care"><h4>Cuidado</h4><p>Se você usa o mesmo DataFrame em duas actions, o Spark recalcula tudo duas vezes, desde a leitura. Para evitar, use <code>cache()</code> (ficha 10).</p></div>
+  <details><summary>Na entrevista: "Diferença entre transformação narrow e wide?"</summary><p>Narrow: cada partição de saída depende de uma só partição de entrada (<code>filter</code>, <code>map</code>, <code>select</code>), não move dados. Wide: precisa de dados de várias partições (<code>groupBy</code>, <code>join</code>, <code>distinct</code>, <code>orderBy</code>), gera shuffle e um novo stage.</p></details>
+</article>
+
+<div class="sec-head"><span class="eyebrow">Parte 1b</span><h2>Spark: DataFrame e agrupamento</h2><p>A API que você mais vai usar no dia a dia, e o que acontece por baixo de cada linha.</p></div>
+
+<!-- F1 -->
+<article class="card" id="f1">
+  <h3>RDD, DataFrame e Dataset</h3>
+  <p class="sit"><b>Situação:</b> o entrevistador pergunta "qual a diferença entre RDD e DataFrame, e por que hoje quase ninguém usa RDD?"</p>
+  <div class="tbl"><table>
+    <tr><th></th><th>RDD</th><th>DataFrame</th><th>Dataset</th></tr>
+    <tr><td>O que é</td><td>Coleção distribuída de objetos</td><td>Tabela distribuída com colunas nomeadas e schema</td><td>DataFrame com tipo forte (só Scala/Java)</td></tr>
+    <tr><td>Schema</td><td>Não tem: o Spark não sabe o que há dentro</td><td>Tem: nomes e tipos de colunas</td><td>Tem, checado na compilação</td></tr>
+    <tr><td>Otimização</td><td>Nenhuma: roda exatamente o que você escreveu</td><td>Catalyst + Tungsten</td><td>Catalyst + Tungsten</td></tr>
+    <tr><td>Python</td><td>Lento (objetos Python serializados)</td><td>Rápido (execução na JVM)</td><td>Não existe em PySpark</td></tr>
+    <tr><td>Use para</td><td>Casos muito específicos, código legado</td><td>Quase tudo</td><td>Projetos Scala que querem segurança de tipo</td></tr>
+  </table></div>
+  <div class="blk why"><h4>Por que o DataFrame ganhou</h4><p>Com o RDD, o Spark recebe uma função "caixa-preta" e não sabe o que ela faz, então não consegue otimizar nada. Com o DataFrame, você declara <b>o quê</b> quer (filtrar, agrupar, somar) e o Spark, conhecendo o schema, decide <b>como</b> fazer: lê só as colunas usadas, empurra filtros para a leitura e escolhe o melhor join. É a mesma ideia do SQL num banco.</p></div>
+<pre><span class="c"># RDD: você descreve o "como", em Python, linha a linha</span>
+rdd.map(lambda r: (r["loja"], r["valor"])).reduceByKey(lambda a, b: a + b)
+
+<span class="c"># DataFrame: você descreve o "o quê"; o Spark otimiza</span>
+df.groupBy("loja").agg(F.sum("valor"))
+
+<span class="c"># Spark SQL: gera exatamente o mesmo plano que o DataFrame acima</span>
+df.createOrReplaceTempView("vendas")
+spark.sql("SELECT loja, SUM(valor) FROM vendas GROUP BY loja")</pre>
+  <details><summary>Na entrevista: "Spark SQL é mais rápido que a API de DataFrame?"</summary><p>Não. Os dois passam pelo mesmo otimizador (Catalyst) e geram o mesmo plano físico. A escolha é de legibilidade e de time: SQL para quem vem de banco, a API para lógica composta em Python, com funções e testes.</p></details>
+</article>
+
+<!-- F2 -->
+<article class="card" id="f2">
+  <h3>Operações essenciais do DataFrame</h3>
+  <p class="sit"><b>Situação:</b> teste técnico: "leia esses pedidos, limpe, calcule o total por cliente e grave em Parquet".</p>
+<pre>from pyspark.sql import SparkSession, functions as F, types as T
+
+spark = SparkSession.builder.appName("pedidos").getOrCreate()
+
+schema = T.StructType([
+    T.StructField("id", T.StringType()),
+    T.StructField("cliente_id", T.StringType()),
+    T.StructField("valor", T.DecimalType(12, 2)),
+    T.StructField("status", T.StringType()),
+    T.StructField("criado_em", T.TimestampType()),
+])
+df = spark.read.schema(schema).json("s3://lake/bronze/pedidos/")    <span class="c"># schema explícito: sem inferência</span>
+
+limpo = (df
+    .filter(F.col("status") != "cancelado")                       <span class="c"># linhas</span>
+    .select("id", "cliente_id", "valor", "criado_em")             <span class="c"># colunas</span>
+    .withColumn("dt", F.to_date("criado_em"))                     <span class="c"># coluna nova</span>
+    .withColumn("faixa", F.when(F.col("valor") &gt;= 1000, "alto")
+                          .when(F.col("valor") &gt;= 100, "medio")
+                          .otherwise("baixo"))
+    .withColumnRenamed("cliente_id", "cliente")
+    .dropDuplicates(["id"])
+    .na.fill({"faixa": "desconhecida"}))
+
+total = limpo.groupBy("cliente").agg(F.sum("valor").alias("total"))
+total.orderBy(F.desc("total")).show(10)
+total.write.mode("overwrite").parquet("s3://lake/gold/total_por_cliente/")</pre>
+  <div class="tbl"><table>
+    <tr><th>Operação</th><th>Tipo</th><th>Gera shuffle?</th></tr>
+    <tr><td><code>select</code>, <code>withColumn</code>, <code>filter</code>, <code>drop</code></td><td>Narrow</td><td>Não</td></tr>
+    <tr><td><code>union</code>, <code>unionByName</code></td><td>Narrow</td><td>Não</td></tr>
+    <tr><td><code>groupBy().agg()</code>, <code>distinct</code>, <code>dropDuplicates</code></td><td>Wide</td><td>Sim</td></tr>
+    <tr><td><code>join</code> (sem broadcast), <code>orderBy</code>, <code>repartition</code></td><td>Wide</td><td>Sim</td></tr>
+  </table></div>
+  <div class="blk care"><h4>Cuidado</h4><ul>
+    <li>Encadear dezenas de <code>withColumn</code> num laço cria um plano enorme e lento de compilar. Para muitas colunas, use um único <code>select</code> com uma lista de expressões.</li>
+    <li><code>union</code> junta por <b>posição</b> das colunas; se a ordem difere, os dados se misturam sem erro. Prefira <code>unionByName</code>.</li>
+    <li><code>show()</code> e <code>count()</code> são actions: cada uma roda o plano inteiro.</li>
+  </ul></div>
+</article>
+
+<!-- F3 -->
+<article class="card" id="f3">
+  <h3>Catalyst e Tungsten: por que o DataFrame é rápido</h3>
+  <p class="sit"><b>Situação:</b> você escreveu o filtro depois do join, mas no <code>explain()</code> o filtro aparece antes. Quem mudou?</p>
+  <figure>
+    <svg viewBox="0 0 700 150" role="img" aria-label="Etapas do Catalyst: plano lógico, plano otimizado, planos físicos, plano escolhido e geração de código">
+      <defs><marker id="mf3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <rect x="5" y="40" width="110" height="56" rx="8" class="bx"/><text x="60" y="64" text-anchor="middle">Seu código</text><text x="60" y="82" text-anchor="middle" class="sub">DF ou SQL</text>
+      <line x1="115" y1="68" x2="133" y2="68" class="ln" marker-end="url(#mf3)"/>
+      <rect x="135" y="40" width="120" height="56" rx="8" class="ac"/><text x="195" y="64" text-anchor="middle">Plano lógico</text><text x="195" y="82" text-anchor="middle" class="sub">o quê fazer</text>
+      <line x1="255" y1="68" x2="273" y2="68" class="ln" marker-end="url(#mf3)"/>
+      <rect x="275" y="40" width="130" height="56" rx="8" class="ac"/><text x="340" y="64" text-anchor="middle">Lógico otimizado</text><text x="340" y="82" text-anchor="middle" class="sub">regras de reescrita</text>
+      <line x1="405" y1="68" x2="423" y2="68" class="ln" marker-end="url(#mf3)"/>
+      <rect x="425" y="40" width="125" height="56" rx="8" class="wn"/><text x="487" y="64" text-anchor="middle">Plano físico</text><text x="487" y="82" text-anchor="middle" class="sub">escolhe pelo custo</text>
+      <line x1="550" y1="68" x2="568" y2="68" class="ln" marker-end="url(#mf3)"/>
+      <rect x="570" y="40" width="125" height="56" rx="8" class="ok"/><text x="632" y="64" text-anchor="middle">Tungsten</text><text x="632" y="82" text-anchor="middle" class="sub">gera bytecode</text>
+      <text x="5" y="128" class="sub">Catalyst = as quatro primeiras etapas. Tungsten = execução eficiente em memória e geração de código.</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>Catalyst (o otimizador)</h4><ul><li><b>Predicate pushdown</b>: move filtros para o mais cedo possível.</li><li><b>Column pruning</b>: remove colunas que ninguém usa.</li><li><b>Constant folding</b>: calcula <code>1 + 1</code> uma vez só.</li><li>Escolhe a estratégia de join (broadcast, sort-merge).</li></ul></div>
+    <div class="blk"><h4>Tungsten (o motor)</h4><ul><li>Guarda os dados em formato binário compacto, fora dos objetos Java, o que reduz o uso de memória e o trabalho do garbage collector.</li><li><b>Whole-stage codegen</b>: junta várias operações num único laço de código compilado. No plano, aparece como <code>*(1)</code> antes do operador.</li></ul></div>
+  </div>
+<pre>df.explain("formatted")   <span class="c"># mostra o plano físico, PushedFilters, colunas lidas e a estratégia de join</span></pre>
+</article>
+
+<!-- F4 -->
+<article class="card" id="f4">
+  <h3>groupBy e agg por dentro</h3>
+  <p class="sit"><b>Situação:</b> "Por que um <code>groupBy</code> com <code>sum</code> sobre 1 bilhão de linhas é rápido, mas um <code>collect_list</code> no mesmo groupBy estoura a memória?"</p>
+  <figure>
+    <svg viewBox="0 0 700 240" role="img" aria-label="Agregação em duas fases: parcial em cada partição, shuffle de poucos valores, agregação final">
+      <defs><marker id="mf4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <text x="20" y="22" class="sub">Partições de entrada</text>
+      <text x="260" y="22" class="sub">1. Agregação parcial</text>
+      <text x="520" y="22" class="sub">2. Agregação final</text>
+      <rect x="20" y="35" width="190" height="50" rx="8" class="ac"/><text x="30" y="56" class="sub">SP 10 · RJ 5 · SP 20</text><text x="30" y="74" class="sub">RJ 7 · SP 3 ... (1 mi linhas)</text>
+      <rect x="20" y="95" width="190" height="50" rx="8" class="ac"/><text x="30" y="116" class="sub">RJ 2 · SP 8 · MG 4</text><text x="30" y="134" class="sub">... (1 mi linhas)</text>
+      <rect x="20" y="155" width="190" height="50" rx="8" class="ac"/><text x="30" y="176" class="sub">MG 1 · SP 6 · RJ 9</text><text x="30" y="194" class="sub">... (1 mi linhas)</text>
+      <line x1="210" y1="60" x2="258" y2="60" class="ln" marker-end="url(#mf4)"/>
+      <line x1="210" y1="120" x2="258" y2="120" class="ln" marker-end="url(#mf4)"/>
+      <line x1="210" y1="180" x2="258" y2="180" class="ln" marker-end="url(#mf4)"/>
+      <rect x="260" y="35" width="170" height="50" rx="8" class="ok"/><text x="345" y="65" text-anchor="middle" class="sub">SP 33 · RJ 12</text>
+      <rect x="260" y="95" width="170" height="50" rx="8" class="ok"/><text x="345" y="125" text-anchor="middle" class="sub">SP 8 · RJ 2 · MG 4</text>
+      <rect x="260" y="155" width="170" height="50" rx="8" class="ok"/><text x="345" y="185" text-anchor="middle" class="sub">SP 6 · RJ 9 · MG 1</text>
+      <line x1="430" y1="60" x2="518" y2="60" class="lnb" marker-end="url(#mf4)"/>
+      <line x1="430" y1="120" x2="518" y2="120" class="lnb" marker-end="url(#mf4)"/>
+      <line x1="430" y1="180" x2="518" y2="180" class="lnb" marker-end="url(#mf4)"/>
+      <text x="474" y="100" text-anchor="middle" class="sub">shuffle</text><text x="474" y="150" text-anchor="middle" class="sub">pequeno</text>
+      <rect x="520" y="35" width="165" height="50" rx="8" class="wn"/><text x="602" y="65" text-anchor="middle">SP = 47</text>
+      <rect x="520" y="95" width="165" height="50" rx="8" class="wn"/><text x="602" y="125" text-anchor="middle">RJ = 23</text>
+      <rect x="520" y="155" width="165" height="50" rx="8" class="wn"/><text x="602" y="185" text-anchor="middle">MG = 5</text>
+      <text x="20" y="230" class="sub">Pela rede viajam só alguns valores por chave por partição, e não os 3 milhões de linhas.</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>O que acontece</h4><p>O Spark divide a agregação em duas fases. Na <b>parcial</b>, cada task soma localmente as linhas da sua partição. Só esse resumo passa pelo <b>shuffle</b>. Na <b>final</b>, cada partição recebe os resumos de uma chave e combina. No <code>explain()</code> aparecem dois <code>HashAggregate</code> com um <code>Exchange</code> no meio.</p></div>
+    <div class="blk why"><h4>Por que <code>sum</code> escala e <code>collect_list</code> não</h4><p><code>sum</code>, <code>count</code>, <code>min</code>, <code>max</code> e <code>avg</code> têm um resumo de tamanho fixo (um número, ou soma e contagem no caso da média), então a fase parcial reduz muito o volume. O <code>collect_list</code> precisa guardar <b>todos</b> os valores de cada chave, então o resumo é do tamanho do dado. Com uma chave grande, a lista inteira precisa caber na memória de uma task.</p></div>
+  </div>
+<pre>resumo = (vendas
+    .groupBy("loja_id", "dt")
+    .agg(
+        F.count("*").alias("qtd"),
+        F.sum("valor").alias("receita"),
+        F.avg("valor").alias("ticket_medio"),
+        F.countDistinct("cliente_id").alias("clientes"),          <span class="c"># exato, mais caro</span>
+        F.approx_count_distinct("cliente_id").alias("clientes_aprox"),  <span class="c"># ~2% de erro, muito mais barato</span>
+        F.sum(F.when(F.col("status") == "pago", F.col("valor"))).alias("receita_paga"),  <span class="c"># agregação condicional</span>
+    ))
+
+<span class="c"># pivot: transforma valores em colunas; informe a lista para evitar um job extra</span>
+vendas.groupBy("loja_id").pivot("canal", ["site", "app", "loja"]).sum("valor")
+
+<span class="c"># subtotais por nível (equivale a GROUPING SETS)</span>
+vendas.rollup("regiao", "loja_id").agg(F.sum("valor"))</pre>
+  <div class="blk care"><h4>Cuidado</h4><ul>
+    <li>Agrupar por uma chave com skew concentra a fase final numa task só. A fase parcial ajuda, mas não resolve totalmente: veja a ficha de skew.</li>
+    <li>Em <code>groupBy</code>, linhas com chave <code>NULL</code> formam um grupo próprio. Se a coluna tem muitos nulos, vira uma chave quente.</li>
+    <li><code>pivot</code> sem a lista de valores roda um job extra só para descobrir os valores distintos.</li>
+  </ul></div>
+  <details><summary>Na entrevista: "Como você calcula o total de vendas por loja num dataset de 5 TB?"</summary><p>Leio só as colunas <code>loja_id</code> e <code>valor</code> (o Parquet ajuda), filtro as partições de data necessárias e faço <code>groupBy("loja_id").agg(sum("valor"))</code>. O Spark agrega parcialmente em cada partição, então o shuffle é pequeno. Se uma loja dominar, o AQE ou salting resolvem a fase final.</p></details>
+</article>
+
+<!-- F5 -->
+<article class="card" id="f5">
+  <h3>groupBy ou window function</h3>
+  <p class="sit"><b>Situação:</b> você precisa do total por cliente, mas sem perder as linhas de cada pedido. Com <code>groupBy</code> as linhas somem.</p>
+  <div class="grid2">
+    <div class="blk"><h4>groupBy</h4><p><b>Colapsa</b> as linhas: um resultado por grupo. 1 milhão de pedidos de 1.000 clientes viram 1.000 linhas.</p></div>
+    <div class="blk"><h4>Window</h4><p><b>Mantém</b> todas as linhas e acrescenta uma coluna calculada sobre um grupo (a "janela"). 1 milhão de pedidos continuam 1 milhão, agora com o total do cliente ao lado.</p></div>
+  </div>
+<pre>from pyspark.sql import Window
+
+por_cliente = Window.partitionBy("cliente_id")
+ordenado = por_cliente.orderBy("criado_em")
+
+resultado = (pedidos
+    .withColumn("total_cliente", F.sum("valor").over(por_cliente))
+    .withColumn("pct_do_total", F.col("valor") / F.col("total_cliente"))
+    .withColumn("n_pedido", F.row_number().over(ordenado))              <span class="c"># 1, 2, 3...</span>
+    .withColumn("valor_anterior", F.lag("valor").over(ordenado))        <span class="c"># linha anterior</span>
+    .withColumn("acumulado", F.sum("valor").over(
+        ordenado.rowsBetween(Window.unboundedPreceding, Window.currentRow)))  <span class="c"># soma corrente</span>
+    .withColumn("media_movel_3", F.avg("valor").over(ordenado.rowsBetween(-2, 0))))
+
+<span class="c"># padrão clássico: o registro mais recente de cada chave (dedup)</span>
+mais_recente = (clientes
+    .withColumn("rn", F.row_number().over(Window.partitionBy("id").orderBy(F.desc("atualizado_em"))))
+    .filter("rn = 1").drop("rn"))</pre>
+  <div class="tbl"><table>
+    <tr><th>Função</th><th>O que faz</th><th>Empate</th></tr>
+    <tr><td><code>row_number</code></td><td>Numera 1, 2, 3...</td><td>Desempata de forma arbitrária</td></tr>
+    <tr><td><code>rank</code></td><td>1, 2, 2, 4</td><td>Pula posições após empate</td></tr>
+    <tr><td><code>dense_rank</code></td><td>1, 2, 2, 3</td><td>Não pula posições</td></tr>
+    <tr><td><code>lag</code> / <code>lead</code></td><td>Valor da linha anterior / seguinte</td><td>-</td></tr>
+  </table></div>
+  <div class="blk care"><h4>Cuidado</h4><ul>
+    <li>A window precisa juntar <b>todas</b> as linhas de cada partição de janela numa task e ordená-las. Uma window sem <code>partitionBy</code> joga a tabela inteira numa única task.</li>
+    <li>Se o que você quer é só o total por grupo, sem as linhas, <code>groupBy</code> é mais barato, porque ele agrega parcialmente e a window não.</li>
+    <li>Com <code>orderBy</code> e sem frame explícito, a soma vira acumulada por padrão (<code>rangeBetween(unboundedPreceding, currentRow)</code>). Isso surpreende muita gente.</li>
+  </ul></div>
+</article>
+
+<!-- F6 -->
+<article class="card" id="f6">
+  <h3>Schema, tipos e nulos</h3>
+  <p class="sit"><b>Situação:</b> o job lê JSON com <code>inferSchema</code>, demora para começar, e um dia a coluna <code>valor</code> vira string e quebra o pipeline.</p>
+  <div class="grid2">
+    <div class="blk why"><h4>Por que definir o schema</h4><ul><li><b>Desempenho</b>: inferir o schema obriga o Spark a ler os dados uma vez a mais antes de começar.</li><li><b>Estabilidade</b>: um arquivo com <code>"valor": "N/A"</code> muda o tipo inferido da coluna inteira.</li><li><b>Contrato</b>: o schema documenta o que o pipeline espera receber.</li></ul></div>
+    <div class="blk"><h4>Modos de leitura para dado ruim</h4><ul><li><code>PERMISSIVE</code> (padrão): campos inválidos viram nulo; a linha original vai para <code>_corrupt_record</code>.</li><li><code>DROPMALFORMED</code>: descarta a linha em silêncio. Perigoso.</li><li><code>FAILFAST</code>: falha no primeiro erro. Bom para dados que precisam ser perfeitos.</li></ul></div>
+  </div>
+<pre>df = (spark.read.schema(schema)
+      .option("mode", "PERMISSIVE")
+      .option("columnNameOfCorruptRecord", "_corrupt_record")
+      .json("s3://lake/bronze/pedidos/"))
+<span class="c"># ruins para uma tabela de quarentena, bons seguem; não perde dado nem quebra o job</span>
+ruins = df.filter(F.col("_corrupt_record").isNotNull())</pre>
+  <div class="blk care"><h4>Nulos que pegam de surpresa</h4><ul>
+    <li><code>NULL = NULL</code> não é verdadeiro: é nulo. Por isso chaves nulas <b>nunca</b> casam num join. Para casar nulos, use <code>eqNullSafe</code> (<code>&lt;=&gt;</code> em SQL).</li>
+    <li><code>count("coluna")</code> ignora nulos; <code>count("*")</code> conta todas as linhas.</li>
+    <li><code>avg</code> ignora nulos: a média de [10, NULL, 20] é 15, e não 10.</li>
+    <li><code>filter(col("status") != "cancelado")</code> também descarta as linhas com status nulo.</li>
+    <li>Use <code>decimal</code> para dinheiro, nunca <code>double</code>: <code>0.1 + 0.2</code> em double dá <code>0.30000000000000004</code>.</li>
+  </ul></div>
+</article>
+
+<!-- F7 -->
+<article class="card" id="f7">
+  <h3>Dedup e count distinct</h3>
+  <p class="sit"><b>Situação:</b> o mesmo evento chegou três vezes (entrega at-least-once) e o relatório mostra receita triplicada.</p>
+  <div class="tbl"><table>
+    <tr><th>Método</th><th>Quando usar</th><th>Custo</th></tr>
+    <tr><td><code>distinct()</code></td><td>Linhas idênticas em todas as colunas</td><td>Shuffle de todas as colunas</td></tr>
+    <tr><td><code>dropDuplicates(["id"])</code></td><td>Mesmo id; não importa qual cópia fica</td><td>Shuffle pela chave; a cópia mantida é arbitrária</td></tr>
+    <tr><td><code>row_number</code> por id, ordenado por data</td><td>Mesmo id; quero a versão mais recente</td><td>Shuffle e ordenação; resultado determinístico</td></tr>
+    <tr><td><code>countDistinct</code></td><td>Contagem exata de únicos</td><td>Caro em alta cardinalidade</td></tr>
+    <tr><td><code>approx_count_distinct</code></td><td>Contagem de únicos para dashboard</td><td>Barato (algoritmo HyperLogLog), erro de ~2%</td></tr>
+  </table></div>
+  <div class="blk why"><h4>Por que <code>dropDuplicates</code> pode ser perigoso</h4><p>Ele mantém "alguma" cópia, e qual delas depende da ordem em que os dados chegaram às partições. Se as cópias diferem (por exemplo, status <code>novo</code> e <code>pago</code>), duas execuções podem dar resultados diferentes. Quando a versão importa, use <code>row_number</code> com uma ordenação explícita.</p></div>
+  <details><summary>Na entrevista: "Como você deduplica um stream?"</summary><p>No Structured Streaming, <code>withWatermark("evento_ts", "1 hour").dropDuplicates(["evento_id", "evento_ts"])</code>. A watermark diz por quanto tempo o Spark guarda os ids já vistos; sem ela, esse estado cresceria para sempre. Fora do Spark, a mesma ideia vale: guardar o id processado no DynamoDB com expiração (TTL).</p></details>
+</article>
+
+<div class="sec-head"><span class="eyebrow">Parte 2</span><h2>Spark: performance</h2><p>Quase todo problema de performance em Spark é um destes: shuffle demais, partições erradas, join mal escolhido, skew ou memória.</p></div>
+
+<!-- S4 -->
+<article class="card" id="s4">
+  <h3>Shuffle: a operação mais cara do Spark</h3>
+  <p class="sit"><b>Situação:</b> o job passa a maior parte do tempo em "Shuffle Read / Shuffle Write" no Spark UI.</p>
+  <figure>
+    <svg viewBox="0 0 700 220" role="img" aria-label="Shuffle: linhas de cada partição são redistribuídas pela chave entre executores">
+      <text x="20" y="22" class="sub">Antes: dados espalhados</text>
+      <text x="450" y="22" class="sub">Depois: agrupados pela chave</text>
+      <rect x="20" y="35" width="170" height="50" rx="8" class="ac"/><text x="105" y="65" text-anchor="middle">A · B · C · A</text>
+      <rect x="20" y="95" width="170" height="50" rx="8" class="ac"/><text x="105" y="125" text-anchor="middle">B · C · A · B</text>
+      <rect x="20" y="155" width="170" height="50" rx="8" class="ac"/><text x="105" y="185" text-anchor="middle">C · A · B · C</text>
+      <rect x="450" y="35" width="170" height="50" rx="8" class="ok"/><text x="535" y="65" text-anchor="middle">A A A A</text>
+      <rect x="450" y="95" width="170" height="50" rx="8" class="ok"/><text x="535" y="125" text-anchor="middle">B B B B</text>
+      <rect x="450" y="155" width="170" height="50" rx="8" class="ok"/><text x="535" y="185" text-anchor="middle">C C C C</text>
+      <line x1="190" y1="60" x2="448" y2="60" class="lnb"/><line x1="190" y1="65" x2="448" y2="120" class="lnb"/><line x1="190" y1="70" x2="448" y2="180" class="lnb"/>
+      <line x1="190" y1="120" x2="448" y2="65" class="lnb"/><line x1="190" y1="125" x2="448" y2="125" class="lnb"/><line x1="190" y1="130" x2="448" y2="185" class="lnb"/>
+      <line x1="190" y1="180" x2="448" y2="70" class="lnb"/><line x1="190" y1="185" x2="448" y2="130" class="lnb"/><line x1="190" y1="190" x2="448" y2="190" class="lnb"/>
+    </svg>
+    <figcaption>Cada executor grava em disco e envia pela rede pedaços para todos os outros. É isso que custa caro.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Redistribuir os dados entre executores para que linhas com a mesma chave fiquem juntas. Necessário para <code>groupBy</code>, <code>join</code>, <code>distinct</code>, <code>orderBy</code> e <code>repartition</code>.</p></div>
+    <div class="blk why"><h4>Por que é caro</h4><p>Envolve três custos de uma vez: <b>serialização</b> (converter objetos em bytes), <b>disco</b> (cada executor grava arquivos de shuffle) e <b>rede</b> (todos mandam para todos). CPU é barata; rede e disco não.</p></div>
+  </div>
+  <div class="blk"><h4>Como reduzir</h4>
+    <ul>
+      <li>Filtre e selecione colunas <b>antes</b> do join ou groupBy: menos bytes para mover.</li>
+      <li>Use broadcast join quando um lado for pequeno: elimina o shuffle do lado grande.</li>
+      <li>Ajuste <code>spark.sql.shuffle.partitions</code> (padrão 200) ao volume, ou deixe o AQE ajustar.</li>
+      <li>Evite <code>orderBy</code> global se não precisar; um sort dentro da partição é mais barato.</li>
+    </ul></div>
+  <details><summary>Na entrevista: "Por que reduceByKey é melhor que groupByKey em RDD?"</summary><p>O <code>reduceByKey</code> faz uma agregação parcial em cada partição antes do shuffle (map-side combine), então envia um valor por chave por partição. O <code>groupByKey</code> envia todas as linhas pela rede. Em DataFrames, o <code>groupBy().agg()</code> já faz a agregação parcial automaticamente.</p></details>
+</article>
+
+<!-- S5 -->
+<article class="card" id="s5">
+  <h3>Partições: repartition e coalesce</h3>
+  <p class="sit"><b>Situação:</b> o job grava 5.000 arquivos minúsculos no S3, ou só usa 2 dos 40 cores disponíveis.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é uma partição</h4><p>Um pedaço do DataFrame processado por uma task. O número de partições define o paralelismo: com 2 partições, só 2 cores trabalham, mesmo com 40 livres. Regra prática: partições de 100 a 200 MB, e de 2 a 4 vezes o número de cores.</p></div>
+    <div class="blk"><h4>Comparação</h4>
+      <div class="tbl"><table>
+        <tr><th></th><th>repartition(n)</th><th>coalesce(n)</th></tr>
+        <tr><td>Direção</td><td>Aumenta ou diminui</td><td>Só diminui</td></tr>
+        <tr><td>Shuffle</td><td>Sim (completo)</td><td>Não (junta partições vizinhas)</td></tr>
+        <tr><td>Resultado</td><td>Partições balanceadas</td><td>Podem ficar desiguais</td></tr>
+      </table></div></div>
+  </div>
+  <figure>
+    <svg viewBox="0 0 700 230" role="img" aria-label="coalesce junta partições vizinhas sem shuffle; repartition redistribui todas as linhas com shuffle">
+      <defs><marker id="m5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <text x="20" y="22" font-weight="600">coalesce(2): junta vizinhas</text>
+      <rect x="20" y="40" width="60" height="30" rx="4" class="ac"/><text x="50" y="60" text-anchor="middle" class="sub">P1 10MB</text>
+      <rect x="20" y="76" width="60" height="30" rx="4" class="ac"/><text x="50" y="96" text-anchor="middle" class="sub">P2 80MB</text>
+      <rect x="20" y="122" width="60" height="30" rx="4" class="ac"/><text x="50" y="142" text-anchor="middle" class="sub">P3 5MB</text>
+      <rect x="20" y="158" width="60" height="30" rx="4" class="ac"/><text x="50" y="178" text-anchor="middle" class="sub">P4 5MB</text>
+      <path d="M80 55 L120 55 L120 78 L158 78" class="ln" marker-end="url(#m5)"/><path d="M80 91 L158 91" class="ln" marker-end="url(#m5)"/>
+      <path d="M80 137 L120 137 L120 160 L158 160" class="ln" marker-end="url(#m5)"/><path d="M80 173 L158 173" class="ln" marker-end="url(#m5)"/>
+      <rect x="160" y="66" width="110" height="40" rx="6" class="wn"/><text x="215" y="91" text-anchor="middle" class="sub">90 MB</text>
+      <rect x="160" y="148" width="110" height="40" rx="6" class="wn"/><text x="215" y="173" text-anchor="middle" class="sub">10 MB</text>
+      <text x="20" y="215" class="sub">Sem rede, rápido, mas pode ficar desigual.</text>
+      <line x1="345" y1="15" x2="345" y2="220" class="ln" stroke-dasharray="3 4"/>
+      <text x="370" y="22" font-weight="600">repartition(2): embaralha tudo</text>
+      <rect x="370" y="40" width="60" height="30" rx="4" class="ac"/><text x="400" y="60" text-anchor="middle" class="sub">P1 10MB</text>
+      <rect x="370" y="76" width="60" height="30" rx="4" class="ac"/><text x="400" y="96" text-anchor="middle" class="sub">P2 80MB</text>
+      <rect x="370" y="122" width="60" height="30" rx="4" class="ac"/><text x="400" y="142" text-anchor="middle" class="sub">P3 5MB</text>
+      <rect x="370" y="158" width="60" height="30" rx="4" class="ac"/><text x="400" y="178" text-anchor="middle" class="sub">P4 5MB</text>
+      <line x1="430" y1="55" x2="558" y2="86" class="lnb"/><line x1="430" y1="91" x2="558" y2="88" class="lnb"/><line x1="430" y1="91" x2="558" y2="166" class="lnb"/>
+      <line x1="430" y1="137" x2="558" y2="90" class="lnb"/><line x1="430" y1="137" x2="558" y2="168" class="lnb"/><line x1="430" y1="173" x2="558" y2="170" class="lnb"/>
+      <rect x="560" y="66" width="110" height="40" rx="6" class="ok"/><text x="615" y="91" text-anchor="middle" class="sub">50 MB</text>
+      <rect x="560" y="148" width="110" height="40" rx="6" class="ok"/><text x="615" y="173" text-anchor="middle" class="sub">50 MB</text>
+      <text x="370" y="215" class="sub">Shuffle completo, mais caro, balanceado.</text>
+    </svg>
+  </figure>
+  <div class="blk why"><h4>Por que coalesce é mais barato</h4><p>O <code>coalesce</code> só junta partições que já estão no mesmo executor, sem mover dados pela rede. O <code>repartition</code> embaralha tudo para balancear, o que exige shuffle. Para reduzir arquivos antes de gravar, prefira <code>coalesce</code>, desde que as partições de entrada não sejam muito desiguais.</p></div>
+  <div class="blk"><h4>De onde vem o número de partições</h4>
+    <div class="tbl"><table>
+      <tr><th>Momento</th><th>Quem decide</th><th>Padrão</th></tr>
+      <tr><td>Leitura de arquivos</td><td>Tamanho dos arquivos dividido por <code>spark.sql.files.maxPartitionBytes</code></td><td>128 MB por partição</td></tr>
+      <tr><td>Depois de um shuffle (join, groupBy)</td><td><code>spark.sql.shuffle.partitions</code> (ou o AQE, se ligado)</td><td>200</td></tr>
+      <tr><td>Depois de <code>repartition(n)</code> ou <code>coalesce(n)</code></td><td>Você</td><td>n</td></tr>
+      <tr><td><code>parallelize</code> / RDD</td><td><code>spark.default.parallelism</code></td><td>Total de cores</td></tr>
+    </table></div></div>
+  <div class="blk"><h4>Onde cada um ajuda</h4>
+    <div class="tbl"><table>
+      <tr><th>Situação</th><th>Use</th><th>Por quê</th></tr>
+      <tr><td>Gravar menos arquivos depois de um filtro forte</td><td><code>coalesce(n)</code></td><td>Reduz arquivos sem shuffle</td></tr>
+      <tr><td>Poucas partições e cores ociosos (leu 1 arquivo grande e gzip)</td><td><code>repartition(n)</code></td><td>Só repartition aumenta o paralelismo</td></tr>
+      <tr><td>Partições muito desiguais</td><td><code>repartition(n)</code></td><td>coalesce mantém a desigualdade</td></tr>
+      <tr><td>Antes de <code>partitionBy("dt")</code> na escrita</td><td><code>repartition("dt")</code></td><td>Cada pasta recebe poucos arquivos</td></tr>
+      <tr><td>Antes de vários joins ou window pela mesma chave</td><td><code>repartition(n, "chave")</code></td><td>Paga o shuffle uma vez e reaproveita</td></tr>
+      <tr><td>Arquivo final único e pequeno (relatório)</td><td><code>coalesce(1)</code></td><td>Aceitável só se o dado for pequeno</td></tr>
+    </table></div></div>
+<pre>df.rdd.getNumPartitions()                          <span class="c"># quantas partições existem agora</span>
+df.repartition(200, "cliente_id")                  <span class="c"># balanceia por chave antes de um join pesado</span>
+df.coalesce(10).write.parquet("s3://lake/x/")      <span class="c"># poucos arquivos grandes na saída</span>
+
+<span class="c"># ver o tamanho de cada partição (linhas por partição)</span>
+df.groupBy(F.spark_partition_id().alias("p")).count().orderBy("p").show()</pre>
+  <div class="blk care"><h4>Três confusões clássicas</h4><ul>
+    <li><b>Partição em memória e partição em disco são coisas diferentes.</b> <code>repartition</code> e <code>coalesce</code> mudam os pedaços em memória que viram tasks. <code>write.partitionBy("dt")</code> cria pastas no S3 (<code>dt=2026-11-10/</code>) e serve para pular dados na leitura. Uma não substitui a outra.</li>
+    <li><b><code>F.coalesce</code> é outra função.</b> Em SQL e em <code>pyspark.sql.functions</code>, <code>coalesce(a, b, 0)</code> devolve o primeiro valor não nulo. Não tem nada a ver com partições. É pegadinha comum.</li>
+    <li><b>O <code>coalesce</code> afeta o stage inteiro.</b> Como não há shuffle para criar uma fronteira, o Spark aplica o número menor de partições a tudo que vem antes no mesmo stage. Um <code>filter</code> pesado seguido de <code>coalesce(1)</code> roda o filtro numa task só. Nesse caso, <code>repartition(1)</code> é mais rápido, porque o filtro continua paralelo e só a escrita é única.</li>
+  </ul></div>
+  <details><summary>Na entrevista: "Qual a diferença entre repartition e coalesce, e quando você usa cada um?"</summary><p><code>repartition</code> faz shuffle completo, aumenta ou diminui e deixa as partições balanceadas; uso para ganhar paralelismo, corrigir partições desiguais ou distribuir por uma chave. <code>coalesce</code> só diminui e junta partições sem shuffle, então é mais barato; uso para reduzir arquivos na escrita. O cuidado é que o <code>coalesce</code> reduz o paralelismo do stage inteiro, então com um valor muito baixo pode ser mais lento que o <code>repartition</code>.</p></details>
+</article>
+
+<!-- S6 -->
+<article class="card" id="s6">
+  <h3>Broadcast join</h3>
+  <p class="sit"><b>Situação:</b> o join entre <code>vendas</code> (2 bilhões de linhas) e <code>lojas</code> (500 linhas) está lento.</p>
+  <figure>
+    <svg viewBox="0 0 700 260" role="img" aria-label="Comparação: sort-merge join embaralha as duas tabelas; broadcast join copia a tabela pequena para cada executor">
+      <defs><marker id="m6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--muted)"/></marker></defs>
+      <text x="20" y="22" font-weight="600">Sem broadcast (sort-merge)</text>
+      <rect x="20" y="35" width="130" height="44" rx="8" class="ac"/><text x="85" y="62" text-anchor="middle">vendas 2 bi</text>
+      <rect x="20" y="90" width="130" height="44" rx="8" class="bx"/><text x="85" y="117" text-anchor="middle">lojas 500</text>
+      <line x1="150" y1="57" x2="228" y2="80" class="lnb" marker-end="url(#m6)"/><line x1="150" y1="112" x2="228" y2="92" class="lnb" marker-end="url(#m6)"/>
+      <rect x="230" y="60" width="100" height="50" rx="8" class="bd"/><text x="280" y="82" text-anchor="middle">shuffle</text><text x="280" y="100" text-anchor="middle" class="sub">das duas</text>
+      <text x="20" y="160" class="sub">As 2 bilhões de linhas viajam pela rede</text>
+      <text x="20" y="178" class="sub">só para encontrar 500 lojas.</text>
+      <line x1="355" y1="20" x2="355" y2="240" class="ln" stroke-dasharray="3 4"/>
+      <text x="375" y="22" font-weight="600">Com broadcast</text>
+      <rect x="375" y="35" width="120" height="44" rx="8" class="ok"/><text x="435" y="62" text-anchor="middle">lojas 500</text>
+      <path d="M495 57 L540 57 L540 115 L563 115" class="ln" marker-end="url(#m6)"/>
+      <path d="M540 115 L540 165 L563 165" class="ln" marker-end="url(#m6)"/>
+      <path d="M540 165 L540 215 L563 215" class="ln" marker-end="url(#m6)"/>
+      <text x="380" y="100" class="sub">cópia inteira enviada</text><text x="380" y="118" class="sub">para cada executor</text>
+      <rect x="565" y="95" width="120" height="40" rx="8" class="ac"/><text x="625" y="120" text-anchor="middle" class="sub">exec 1: vendas + lojas</text>
+      <rect x="565" y="145" width="120" height="40" rx="8" class="ac"/><text x="625" y="170" text-anchor="middle" class="sub">exec 2: vendas + lojas</text>
+      <rect x="565" y="195" width="120" height="40" rx="8" class="ac"/><text x="625" y="220" text-anchor="middle" class="sub">exec 3: vendas + lojas</text>
+      <text x="380" y="170" class="sub">vendas não se move:</text><text x="380" y="188" class="sub">join local, sem shuffle</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Uma estratégia de join em que a tabela <b>pequena</b> é copiada inteira para a memória de <b>todos</b> os executores. Cada executor faz o join localmente com o pedaço da tabela grande que já tem.</p></div>
+    <div class="blk why"><h4>Por que funciona</h4><p>Num join normal, as duas tabelas são embaralhadas para que chaves iguais se encontrem na mesma máquina. Se uma tabela tem 500 linhas, é muito mais barato mandar uma cópia dela para cada executor do que mover 2 bilhões de linhas pela rede. Você troca um shuffle enorme por uma cópia pequena.</p></div>
+  </div>
+  <div class="blk"><h4>Como usar</h4>
+<pre>from pyspark.sql.functions import broadcast
+
+resultado = vendas.join(broadcast(lojas), "loja_id")   <span class="c"># força o broadcast</span>
+
+<span class="c"># ou deixe automático: o Spark faz broadcast de tabelas abaixo deste limite (padrão 10 MB)</span>
+spark.conf.set("spark.sql.autoBroadcastJoinThreshold", 50 * 1024 * 1024)   <span class="c"># 50 MB</span>
+
+<span class="c"># em SQL</span>
+spark.sql("SELECT /*+ BROADCAST(l) */ * FROM vendas v JOIN lojas l ON v.loja_id = l.loja_id")
+
+resultado.explain()   <span class="c"># confirme: deve aparecer BroadcastHashJoin</span></pre></div>
+  <div class="blk care"><h4>Cuidado</h4>
+    <ul>
+      <li>A tabela pequena precisa caber na memória do <b>Driver</b> (que a coleta primeiro) e de <b>cada executor</b>. Fazer broadcast de 2 GB derruba o job com OOM.</li>
+      <li>Não funciona como lado "preservado" de alguns outer joins: em <code>vendas LEFT JOIN lojas</code>, só <code>lojas</code> pode ser o lado broadcast.</li>
+      <li>O tamanho estimado pelo Spark pode estar errado depois de filtros; confira com <code>explain()</code>.</li>
+    </ul></div>
+  <details><summary>Na entrevista: "Seu join está lento. Como você investiga?"</summary><p>Abro o Spark UI e vejo qual stage demora e se há shuffle grande ou skew. Rodo <code>explain()</code> para ver a estratégia de join. Se um lado for pequeno (até algumas centenas de MB), aplico broadcast. Se os dois forem grandes, filtro e seleciono colunas antes, confiro se o tamanho das partições está bom e trato skew com AQE ou salting. Por último, avalio pré-particionar ou usar bucketing se o join se repete todo dia.</p></details>
+</article>
+
+<!-- S7 -->
+<article class="card" id="s7">
+  <h3>Estratégias de join do Spark</h3>
+  <p class="sit"><b>Situação:</b> no <code>explain()</code> aparece <code>SortMergeJoin</code>. O que isso significa e quais são as alternativas?</p>
+  <div class="tbl"><table>
+    <tr><th>Estratégia</th><th>Como funciona</th><th>Quando o Spark escolhe</th><th>Custo</th></tr>
+    <tr><td><b>Broadcast Hash Join</b></td><td>Copia o lado pequeno para todos e monta uma tabela hash em memória</td><td>Um lado abaixo do limite de broadcast</td><td>O mais rápido, sem shuffle</td></tr>
+    <tr><td><b>Shuffle Hash Join</b></td><td>Shuffle nos dois lados; em cada partição, monta hash do lado menor</td><td>Um lado bem menor que o outro, mas grande para broadcast</td><td>Um shuffle, sem ordenação</td></tr>
+    <tr><td><b>Sort-Merge Join</b></td><td>Shuffle nos dois lados, ordena pela chave e percorre os dois em paralelo</td><td>Padrão para duas tabelas grandes</td><td>Shuffle e sort, mas escala e pode gravar em disco</td></tr>
+    <tr><td><b>Broadcast Nested Loop</b></td><td>Compara cada linha com cada linha</td><td>Join sem igualdade (<code>&gt;</code>, <code>BETWEEN</code>)</td><td>Muito caro: evite</td></tr>
+    <tr><td><b>Cartesian</b></td><td>Todas as combinações</td><td><code>crossJoin</code> ou join sem condição</td><td>N × M linhas: quase sempre erro</td></tr>
+  </table></div>
+  <div class="blk why"><h4>Por que o sort-merge é o padrão</h4><p>Ele não precisa que nenhum lado caiba na memória: depois de ordenar, basta percorrer os dois lados como num zíper, e se a memória acabar ele grava em disco (spill). É mais lento que um hash join, mas não quebra com volume grande.</p></div>
+  <details><summary>Na entrevista: "Por que join com BETWEEN é lento?"</summary><p>Sem igualdade na condição, o Spark não consegue usar hash nem ordenar pela chave, então cai no nested loop (compara tudo com tudo). A saída é criar uma chave de igualdade, por exemplo arredondar a data para o dia ("bucket" de intervalo), fazer o join por ela e só depois aplicar o filtro exato.</p></details>
+</article>
+
+<!-- S8 -->
+<article class="card" id="s8">
+  <h3>Data skew e salting</h3>
+  <p class="sit"><b>Situação:</b> 199 tasks terminam em segundos e uma leva 30 minutos. O cliente "AMAZON" tem 40% das linhas.</p>
+  <figure>
+    <svg viewBox="0 0 700 220" role="img" aria-label="Sem salting uma partição concentra a chave quente; com salting ela é dividida em várias">
+      <text x="20" y="22" font-weight="600">Sem salting</text>
+      <rect x="20" y="40" width="290" height="34" rx="6" class="bd"/><text x="30" y="62" class="sub">task 1: AMAZON · 800 mi linhas</text>
+      <rect x="20" y="80" width="40" height="26" rx="6" class="ok"/><text x="70" y="98" class="sub">task 2: 5 mi</text>
+      <rect x="20" y="112" width="40" height="26" rx="6" class="ok"/><text x="70" y="130" class="sub">task 3: 4 mi</text>
+      <text x="20" y="168" class="sub">O stage espera a task mais lenta.</text>
+      <line x1="345" y1="20" x2="345" y2="200" class="ln" stroke-dasharray="3 4"/>
+      <text x="370" y="22" font-weight="600">Com salting (chave + número 0..N)</text>
+      <rect x="370" y="40" width="100" height="26" rx="6" class="ac"/><text x="480" y="58" class="sub">AMAZON_0 · 200 mi</text>
+      <rect x="370" y="72" width="100" height="26" rx="6" class="ac"/><text x="480" y="90" class="sub">AMAZON_1 · 200 mi</text>
+      <rect x="370" y="104" width="100" height="26" rx="6" class="ac"/><text x="480" y="122" class="sub">AMAZON_2 · 200 mi</text>
+      <rect x="370" y="136" width="100" height="26" rx="6" class="ac"/><text x="480" y="154" class="sub">AMAZON_3 · 200 mi</text>
+      <text x="370" y="190" class="sub">A chave quente vira 4 tasks em paralelo.</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Distribuição desigual: o shuffle manda todas as linhas de uma chave para a mesma partição. Se uma chave domina, uma task recebe quase tudo, e o stage inteiro espera por ela.</p></div>
+    <div class="blk why"><h4>Por que o salting funciona</h4><p>Você adiciona um número aleatório à chave ("sal"), transformando uma chave quente em N chaves diferentes, que vão para N partições. Do outro lado do join, você replica cada linha N vezes, uma para cada sal, para que os pares continuem se encontrando.</p></div>
+  </div>
+<pre>from pyspark.sql import functions as F
+N = 8
+
+<span class="c"># lado grande: sal aleatório de 0 a N-1</span>
+vendas_s = vendas.withColumn("sal", (F.rand() * N).cast("int"))
+
+<span class="c"># lado menor: replica cada linha N vezes, uma por sal</span>
+clientes_s = clientes.withColumn("sal", F.explode(F.array([F.lit(i) for i in range(N)])))
+
+resultado = vendas_s.join(clientes_s, ["cliente_id", "sal"]).drop("sal")</pre>
+  <div class="blk care"><h4>Cuidado</h4><ul><li>O lado replicado cresce N vezes. Aplique o sal só às chaves quentes se possível.</li><li>Antes de salting manual, ative o AQE: no Spark 3 ele resolve boa parte do skew sozinho.</li><li>Se a chave quente for <code>NULL</code>, o problema pode ser outro: filtre os nulos antes do join, já que eles nunca casam.</li></ul></div>
+  <details><summary>Na entrevista: "Como você detecta skew?"</summary><p>No Spark UI, na aba do stage, comparo a duração e o "Shuffle Read Size" das tasks: se o máximo é muito maior que a mediana, há skew. No código, um <code>groupBy("chave").count().orderBy(desc("count"))</code> mostra as chaves quentes.</p></details>
+</article>
+
+<!-- S9 -->
+<article class="card" id="s9">
+  <h3>AQE: Adaptive Query Execution</h3>
+  <p class="sit"><b>Situação:</b> você não sabe o tamanho certo de <code>shuffle.partitions</code>, e o volume muda todo dia.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Desde o Spark 3, o plano pode ser reajustado <b>durante</b> a execução, com base no tamanho real dos dados depois de cada shuffle, e não só nas estimativas feitas antes de começar.</p></div>
+    <div class="blk why"><h4>Por que funciona</h4><p>O otimizador clássico decide tudo antes de rodar, com estatísticas que muitas vezes estão erradas. O AQE espera cada stage terminar, mede o resultado e então decide o próximo passo com números reais.</p></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>O que o AQE faz</th><th>Configuração</th></tr>
+    <tr><td>Junta partições pequenas depois do shuffle (evita 200 tasks de 1 MB)</td><td><code>spark.sql.adaptive.coalescePartitions.enabled</code></td></tr>
+    <tr><td>Troca sort-merge por broadcast se um lado ficou pequeno após filtros</td><td>automático com AQE ligado</td></tr>
+    <tr><td>Divide partições com skew em várias tasks</td><td><code>spark.sql.adaptive.skewJoin.enabled</code></td></tr>
+  </table></div>
+<pre>spark.conf.set("spark.sql.adaptive.enabled", "true")            <span class="c"># padrão desde o Spark 3.2</span>
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")</pre>
+  <details><summary>Na entrevista: "O AQE substitui o broadcast manual?"</summary><p>Em parte. Ele converte para broadcast quando descobre em tempo de execução que um lado é pequeno, mas só depois de rodar o stage anterior. Se você já sabe que a tabela é pequena, o hint <code>broadcast()</code> evita até o primeiro shuffle.</p></details>
+</article>
+
+<!-- S10 -->
+<article class="card" id="s10">
+  <h3>Cache e persist</h3>
+  <p class="sit"><b>Situação:</b> você usa o mesmo DataFrame limpo em três agregações diferentes e o job lê o S3 três vezes.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Guardar o resultado de um DataFrame na memória (ou disco) dos executores para reaproveitar em várias actions. <code>cache()</code> é atalho para <code>persist(MEMORY_AND_DISK)</code> em DataFrames.</p></div>
+    <div class="blk why"><h4>Por que funciona</h4><p>Por causa da lazy evaluation, cada action recalcula o DataFrame desde a origem. O cache "corta" a linhagem: a partir dali, as próximas actions partem do dado já calculado.</p></div>
+  </div>
+<pre>from pyspark import StorageLevel
+limpo = bruto.filter(...).dropDuplicates(["id"]).persist(StorageLevel.MEMORY_AND_DISK)
+limpo.count()                 <span class="c"># action que materializa o cache</span>
+por_dia    = limpo.groupBy("dt").sum("valor")
+por_regiao = limpo.groupBy("regiao").sum("valor")
+limpo.unpersist()             <span class="c"># libera a memória quando terminar</span></pre>
+  <div class="blk care"><h4>Cuidado</h4><p>Cache ocupa memória que o shuffle e os joins também precisam. Fazer cache de tudo "por garantia" causa spill e piora o job. Só faça cache de DataFrames usados mais de uma vez e caros de recalcular, e sempre chame <code>unpersist()</code>.</p></div>
+</article>
+
+<!-- S11 -->
+<article class="card" id="s11">
+  <h3>Memória, spill e OutOfMemory</h3>
+  <p class="sit"><b>Situação:</b> o job falha com <code>java.lang.OutOfMemoryError</code> ou <code>Container killed by YARN for exceeding memory limits</code>.</p>
+  <figure>
+    <svg viewBox="0 0 700 140" role="img" aria-label="Memória do executor dividida em overhead, execução, armazenamento e usuário">
+      <rect x="20" y="30" width="660" height="50" rx="8" class="bx"/>
+      <rect x="20" y="30" width="80" height="50" rx="8" class="wn"/><text x="60" y="60" text-anchor="middle" class="sub">overhead</text>
+      <rect x="100" y="30" width="250" height="50" class="ac"/><text x="225" y="52" text-anchor="middle">Execução</text><text x="225" y="70" text-anchor="middle" class="sub">shuffle, join, sort</text>
+      <rect x="350" y="30" width="200" height="50" class="ok"/><text x="450" y="52" text-anchor="middle">Armazenamento</text><text x="450" y="70" text-anchor="middle" class="sub">cache, broadcast</text>
+      <text x="615" y="60" text-anchor="middle" class="sub">usuário / UDFs</text>
+      <text x="20" y="110" class="sub">Execução e armazenamento dividem uma área unificada (spark.memory.fraction) e emprestam espaço entre si.</text>
+      <text x="20" y="128" class="sub">O overhead (fora da JVM) é onde vivem os processos Python do PySpark.</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>Spill</h4><p>Quando a memória de execução acaba, o Spark grava dados temporários em disco e continua. O job não quebra, mas fica mais lento. No Spark UI aparece como "Spill (Memory)" e "Spill (Disk)".</p></div>
+    <div class="blk"><h4>OOM</h4><p>Acontece quando algo precisa estar inteiro na memória e não cabe: um <code>collect()</code> grande no Driver, um broadcast grande demais, uma partição gigante por skew, ou o processo Python estourando o overhead.</p></div>
+  </div>
+  <div class="blk"><h4>Como resolver, em ordem</h4>
+    <ol>
+      <li>Descubra <b>onde</b> estourou: no Driver ou num executor.</li>
+      <li>No Driver: remova <code>collect()</code> e <code>toPandas()</code> grandes, reduza o broadcast.</li>
+      <li>Num executor: aumente o número de partições (partições menores), trate skew, reduza cache.</li>
+      <li>Com PySpark e UDFs: aumente <code>spark.executor.memoryOverhead</code>.</li>
+      <li>Só por último aumente <code>executor-memory</code>. Mais memória esconde o problema, não resolve.</li>
+    </ol></div>
+</article>
+
+<!-- S12 -->
+<article class="card" id="s12">
+  <h3>UDF Python lenta</h3>
+  <p class="sit"><b>Situação:</b> você criou uma função Python com <code>@udf</code> e o job ficou 10 vezes mais lento.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que acontece</h4><p>O Spark roda na JVM. Para uma UDF Python, cada linha precisa ser serializada, enviada a um processo Python separado, processada e devolvida. Além disso, o otimizador não consegue enxergar dentro da UDF.</p></div>
+    <div class="blk why"><h4>Por que funções nativas ganham</h4><p>As funções de <code>pyspark.sql.functions</code> rodam dentro da JVM, com geração de código otimizado (Tungsten) e sem atravessar processos. Quase sempre existe uma função nativa para o que você precisa.</p></div>
+  </div>
+<pre><span class="c"># lento: UDF Python linha a linha</span>
+@F.udf("string")
+def faixa(v): return "alto" if v &gt; 1000 else "baixo"
+
+<span class="c"># rápido: função nativa</span>
+df.withColumn("faixa", F.when(F.col("valor") &gt; 1000, "alto").otherwise("baixo"))
+
+<span class="c"># se precisar mesmo de Python: pandas UDF (vetorizada com Apache Arrow, em lotes)</span>
+@F.pandas_udf("double")
+def com_imposto(v: pd.Series) -&gt; pd.Series: return v * 1.1</pre>
+</article>
+
+<div class="sec-head"><span class="eyebrow">Parte 3</span><h2>Armazenamento e formatos</h2><p>Metade da performance de um pipeline é decidida em como os dados estão gravados.</p></div>
+
+<!-- A1 -->
+<article class="card" id="a1">
+  <h3>Parquet e o formato colunar</h3>
+  <p class="sit"><b>Situação:</b> a mesma consulta no Athena lê 100 GB em CSV e 3 GB em Parquet. Por quê?</p>
+  <figure>
+    <svg viewBox="0 0 700 170" role="img" aria-label="CSV grava por linha; Parquet grava por coluna, permitindo ler só as colunas necessárias">
+      <text x="20" y="22" font-weight="600">CSV / JSON (por linha)</text>
+      <rect x="20" y="35" width="300" height="28" class="bd"/><text x="30" y="54" class="sub">1, Ana, SP, 120.00, 2026-11-01</text>
+      <rect x="20" y="63" width="300" height="28" class="bd"/><text x="30" y="82" class="sub">2, Bia, RJ, 80.00, 2026-11-01</text>
+      <rect x="20" y="91" width="300" height="28" class="bd"/><text x="30" y="110" class="sub">3, Caio, SP, 45.00, 2026-11-02</text>
+      <text x="20" y="145" class="sub">SUM(valor) precisa ler todas as colunas.</text>
+      <text x="370" y="22" font-weight="600">Parquet (por coluna)</text>
+      <rect x="370" y="35" width="50" height="84" class="bx"/><text x="395" y="82" text-anchor="middle" class="sub">id</text>
+      <rect x="425" y="35" width="60" height="84" class="bx"/><text x="455" y="82" text-anchor="middle" class="sub">nome</text>
+      <rect x="490" y="35" width="50" height="84" class="bx"/><text x="515" y="82" text-anchor="middle" class="sub">uf</text>
+      <rect x="545" y="35" width="65" height="84" class="ok"/><text x="577" y="82" text-anchor="middle" class="sub">valor</text>
+      <rect x="615" y="35" width="65" height="84" class="bx"/><text x="647" y="82" text-anchor="middle" class="sub">data</text>
+      <text x="370" y="145" class="sub">SUM(valor) lê só a coluna verde.</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Um formato que grava os valores de cada coluna juntos, em blocos (row groups), com metadados de mínimo, máximo e contagem por bloco, além de compressão (Snappy ou ZSTD).</p></div>
+    <div class="blk why"><h4>Por que é tão melhor para análise</h4><ul><li><b>Lê só as colunas usadas</b> (column pruning).</li><li><b>Comprime muito mais</b>: valores parecidos lado a lado (a coluna <code>uf</code> repete "SP") compactam bem.</li><li><b>Pula blocos</b> usando os metadados: se o máximo de um bloco é 50, um filtro <code>valor &gt; 100</code> nem o lê.</li><li><b>Guarda o schema</b> e os tipos, o que evita erros de parsing.</li></ul></div>
+  </div>
+  <details><summary>Na entrevista: "Quando não usar Parquet?"</summary><p>Para escrita linha a linha e de baixa latência (é um formato de lote, imutável), para leitura de uma linha inteira por chave (use um banco) ou quando precisa ser lido por humanos e ferramentas simples. A camada bronze às vezes fica em JSON, para preservar o dado bruto exatamente como chegou.</p></details>
+</article>
+
+<!-- A2 -->
+<article class="card" id="a2">
+  <h3>Predicate pushdown e partition pruning</h3>
+  <p class="sit"><b>Situação:</b> você filtra por data, mas o job lê o bucket inteiro.</p>
+  <div class="grid2">
+    <div class="blk"><h4>Partition pruning</h4><p>Se a tabela está particionada em pastas (<code>dt=2026-11-10/</code>), um filtro pela coluna de partição faz o Spark ou o Athena nem listarem as outras pastas. É o corte mais barato que existe.</p></div>
+    <div class="blk"><h4>Predicate pushdown</h4><p>O filtro é "empurrado" para a leitura do arquivo: o leitor Parquet usa os metadados de mínimo e máximo para pular row groups inteiros antes de trazer dados para a memória.</p></div>
+  </div>
+  <div class="blk care"><h4>O que quebra o pruning</h4>
+<pre><span class="c">-- quebra: função aplicada à coluna de partição, o motor não consegue cortar pastas</span>
+WHERE date_format(dt, '%Y-%m') = '2026-11'
+<span class="c">-- funciona: comparação direta com a coluna</span>
+WHERE dt BETWEEN DATE '2026-11-01' AND DATE '2026-11-30'</pre>
+  <p>Também quebra: comparar tipos diferentes (string com data) e filtrar depois de uma UDF. Confirme com <code>explain()</code>: procure <code>PartitionFilters</code> e <code>PushedFilters</code>.</p></div>
+</article>
+
+<!-- A3 -->
+<article class="card" id="a3">
+  <h3>O problema dos arquivos pequenos</h3>
+  <p class="sit"><b>Situação:</b> um streaming grava um arquivo de 50 KB por minuto. Depois de um mês, consultar a tabela leva 10 minutos.</p>
+  <figure>
+    <svg viewBox="0 0 700 150" role="img" aria-label="Muitos arquivos pequenos contra poucos arquivos grandes com o mesmo volume">
+      <text x="20" y="22" font-weight="600">40.000 arquivos de 50 KB (2 GB)</text>
+      <rect x="20" y="35" width="14" height="14" class="bd"/><rect x="38" y="35" width="14" height="14" class="bd"/><rect x="56" y="35" width="14" height="14" class="bd"/><rect x="74" y="35" width="14" height="14" class="bd"/><rect x="92" y="35" width="14" height="14" class="bd"/><rect x="110" y="35" width="14" height="14" class="bd"/><rect x="128" y="35" width="14" height="14" class="bd"/><rect x="146" y="35" width="14" height="14" class="bd"/><rect x="164" y="35" width="14" height="14" class="bd"/><rect x="182" y="35" width="14" height="14" class="bd"/><rect x="200" y="35" width="14" height="14" class="bd"/><rect x="218" y="35" width="14" height="14" class="bd"/><rect x="236" y="35" width="14" height="14" class="bd"/><rect x="254" y="35" width="14" height="14" class="bd"/><rect x="272" y="35" width="14" height="14" class="bd"/><rect x="290" y="35" width="14" height="14" class="bd"/>
+      <rect x="20" y="53" width="14" height="14" class="bd"/><rect x="38" y="53" width="14" height="14" class="bd"/><rect x="56" y="53" width="14" height="14" class="bd"/><rect x="74" y="53" width="14" height="14" class="bd"/><rect x="92" y="53" width="14" height="14" class="bd"/><rect x="110" y="53" width="14" height="14" class="bd"/><rect x="128" y="53" width="14" height="14" class="bd"/><rect x="146" y="53" width="14" height="14" class="bd"/><rect x="164" y="53" width="14" height="14" class="bd"/><rect x="182" y="53" width="14" height="14" class="bd"/><rect x="200" y="53" width="14" height="14" class="bd"/><rect x="218" y="53" width="14" height="14" class="bd"/><rect x="236" y="53" width="14" height="14" class="bd"/><rect x="254" y="53" width="14" height="14" class="bd"/><rect x="272" y="53" width="14" height="14" class="bd"/><rect x="290" y="53" width="14" height="14" class="bd"/>
+      <rect x="20" y="71" width="14" height="14" class="bd"/><rect x="38" y="71" width="14" height="14" class="bd"/><rect x="56" y="71" width="14" height="14" class="bd"/><rect x="74" y="71" width="14" height="14" class="bd"/><rect x="92" y="71" width="14" height="14" class="bd"/><rect x="110" y="71" width="14" height="14" class="bd"/><rect x="128" y="71" width="14" height="14" class="bd"/><rect x="146" y="71" width="14" height="14" class="bd"/><rect x="164" y="71" width="14" height="14" class="bd"/><rect x="182" y="71" width="14" height="14" class="bd"/><rect x="200" y="71" width="14" height="14" class="bd"/><rect x="218" y="71" width="14" height="14" class="bd"/><rect x="236" y="71" width="14" height="14" class="bd"/><rect x="254" y="71" width="14" height="14" class="bd"/><rect x="272" y="71" width="14" height="14" class="bd"/><rect x="290" y="71" width="14" height="14" class="bd"/>
+      <text x="20" y="112" class="sub">40 mil listagens e leituras de metadados</text>
+      <text x="20" y="130" class="sub">milhares de tasks minúsculas: consulta em minutos</text>
+      <line x1="345" y1="20" x2="345" y2="140" class="ln" stroke-dasharray="3 4"/>
+      <text x="370" y="22" font-weight="600">16 arquivos de 128 MB (2 GB)</text>
+      <rect x="370" y="35" width="70" height="50" rx="4" class="ok"/><rect x="446" y="35" width="70" height="50" rx="4" class="ok"/><rect x="522" y="35" width="70" height="50" rx="4" class="ok"/><rect x="598" y="35" width="70" height="50" rx="4" class="ok"/>
+      <text x="370" y="112" class="sub">mesmo volume, 2.500 vezes menos arquivos</text>
+      <text x="370" y="130" class="sub">poucas tasks bem cheias: consulta em segundos</text>
+    </svg>
+  </figure>
+  <div class="grid2">
+    <div class="blk why"><h4>Por que é um problema</h4><ul>
+      <li><b>Overhead por arquivo</b>: cada um custa uma listagem e um GET no S3, mais a leitura do rodapé (metadados) do Parquet. O motor passa mais tempo abrindo arquivos do que lendo dados.</li>
+      <li><b>Tasks demais</b>: cada task tem custo fixo de agendamento; milhares de tasks de milissegundos desperdiçam o cluster e sobrecarregam o Driver.</li>
+      <li><b>Compressão pior</b>: row groups pequenos comprimem menos e os metadados de mínimo e máximo pulam menos dados.</li>
+      <li><b>Custo no S3</b>: você paga por requisição, e o S3 limita requisições por prefixo (erro <code>503 Slow Down</code>).</li>
+    </ul></div>
+    <div class="blk"><h4>De onde ele vem</h4><ul>
+      <li><b>Partições demais na escrita</b>: com 200 partições de shuffle (o padrão) e <code>partitionBy("dt")</code> em 30 dias, até 200 × 30 = 6.000 arquivos.</li>
+      <li><b><code>partitionBy</code> com alta cardinalidade</b>: por <code>cliente_id</code>, uma pasta com arquivos minúsculos para cada cliente.</li>
+      <li><b>Streaming com micro-batch curto</b>: um arquivo por partição a cada gatilho.</li>
+      <li><b>Firehose com buffer pequeno</b> e appends frequentes (de hora em hora).</li>
+    </ul></div>
+  </div>
+  <div class="blk"><h4>Como detectar</h4>
+<pre><span class="c"># quantos arquivos e qual o tamanho total numa partição</span>
+aws s3 ls s3://lake/silver/pedidos/dt=2026-11-10/ --recursive --summarize --human-readable
+
+<span class="c">-- no Iceberg, direto por SQL</span>
+SELECT COUNT(*) AS arquivos, AVG(file_size_in_bytes) / 1024 / 1024 AS mb_medio
+FROM silver.pedidos.files;</pre>
+  <p>Tamanho médio abaixo de 32 MB já justifica compactar. No Spark UI, um stage de leitura com milhares de tasks de poucos milissegundos é o sinal clássico.</p></div>
+  <div class="blk"><h4>Como resolver na escrita: calcular o número de arquivos</h4>
+<pre>ALVO_MB = 256
+tamanho_mb = 6 * 1024                                <span class="c"># volume estimado da saída (6 GB)</span>
+n_arquivos = max(1, tamanho_mb // ALVO_MB)           <span class="c"># 24 arquivos</span>
+df.repartition(n_arquivos).write.mode("overwrite").parquet("s3://lake/silver/x/")
+
+<span class="c"># com partitionBy: reparticione pela mesma coluna, assim cada pasta recebe poucos arquivos</span>
+(df.repartition("dt")
+   .write.partitionBy("dt")
+   .option("maxRecordsPerFile", 5_000_000)            <span class="c"># teto de linhas por arquivo, evita um arquivo gigante</span>
+   .parquet("s3://lake/silver/pedidos/"))
+
+<span class="c"># ou deixe o AQE juntar as partições pequenas do shuffle antes de gravar</span>
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+spark.conf.set("spark.sql.adaptive.advisoryPartitionSizeInBytes", "256m")</pre></div>
+  <div class="blk"><h4>Como resolver depois: compactação</h4>
+<pre><span class="c"># Parquet comum: reescreve a partição em poucos arquivos numa pasta nova</span>
+p = "s3://lake/silver/pedidos/dt=2026-11-10/"
+spark.read.parquet(p).coalesce(8).write.mode("overwrite").parquet(p.rstrip("/") + "_compactado/")
+<span class="c"># depois aponte o catálogo para a pasta nova; nunca sobrescreva a pasta que você está lendo</span>
+
+<span class="c">-- Iceberg: troca os arquivos de forma atômica, sem parar as leituras</span>
+CALL glue_catalog.system.rewrite_data_files(table =&gt; 'silver.pedidos',
+     options =&gt; map('target-file-size-bytes', '268435456'));
+OPTIMIZE silver.pedidos REWRITE DATA USING BIN_PACK;   <span class="c">-- equivalente no Athena</span></pre></div>
+  <div class="blk"><h4>Na leitura (paliativo)</h4><p><code>spark.sql.files.maxPartitionBytes</code> (padrão 128 MB) e <code>spark.sql.files.openCostInBytes</code> fazem o Spark agrupar vários arquivos pequenos numa mesma task de leitura. Reduz o número de tasks, mas não as requisições ao S3. É um alívio, não a cura.</p></div>
+  <div class="blk care"><h4>Cuidado</h4><ul>
+    <li>O oposto também é ruim: um único arquivo de 50 GB tira o paralelismo de quem escreve e de quem lê. Mire em 128 MB a 1 GB.</li>
+    <li><code>coalesce(1)</code> para "resolver" arquivos pequenos transforma o último stage numa única task.</li>
+    <li>Sobrescrever uma pasta enquanto outro job lê dela causa leituras quebradas. É uma das razões para usar Iceberg.</li>
+  </ul></div>
+  <details><summary>Na entrevista: "Sua tabela no Athena ficou lenta com o tempo, sem o volume crescer muito. O que é?"</summary><p>O suspeito principal é o acúmulo de arquivos pequenos (e, no Iceberg, de snapshots e metadados). Confiro a quantidade e o tamanho médio dos arquivos por partição. Resolvo com compactação agendada (<code>rewrite_data_files</code> e <code>expire_snapshots</code> no Iceberg), correção na origem (buffer maior no Firehose, <code>repartition</code> antes de gravar, gatilho de streaming mais longo) e um alarme para o número de arquivos por partição.</p></details>
+  <details><summary>Na entrevista: "Por que 200 arquivos por partição se você só tem 1 GB de dados?"</summary><p>Porque <code>spark.sql.shuffle.partitions</code> é 200 por padrão: depois de um shuffle, cada uma das 200 tasks grava um arquivo em cada pasta de <code>partitionBy</code> em que tem dados. Resolvo com <code>repartition</code> pela coluna de partição antes de gravar, ajustando o número de partições ao volume, ou com o AQE juntando as partições pequenas.</p></details>
+</article>
+
+<!-- A4 -->
+<article class="card" id="a4">
+  <h3>Particionamento vs bucketing</h3>
+  <p class="sit"><b>Situação:</b> você particionou por <code>cliente_id</code> e agora tem 2 milhões de pastas.</p>
+  <div class="tbl"><table>
+    <tr><th></th><th>Particionamento</th><th>Bucketing</th></tr>
+    <tr><td>Como grava</td><td>Uma pasta por valor (<code>dt=2026-11-10/</code>)</td><td>Número fixo de arquivos, por hash da coluna</td></tr>
+    <tr><td>Bom para</td><td>Colunas de baixa cardinalidade, usadas em filtro (data, região)</td><td>Colunas de alta cardinalidade usadas em join (<code>cliente_id</code>)</td></tr>
+    <tr><td>Ganho</td><td>Pula pastas inteiras na leitura</td><td>Evita shuffle em joins entre tabelas com o mesmo bucketing</td></tr>
+    <tr><td>Erro comum</td><td>Particionar por coluna com milhões de valores</td><td>Número de buckets diferente entre as tabelas do join</td></tr>
+  </table></div>
+  <div class="blk why"><h4>Por que o bucketing evita shuffle</h4><p>Se as duas tabelas foram gravadas com o mesmo hash e o mesmo número de buckets na chave do join, a linha do cliente 42 já está no mesmo número de bucket nas duas. O Spark faz o join bucket a bucket, sem redistribuir nada.</p></div>
+</article>
+
+<!-- A5 -->
+<article class="card" id="a5">
+  <h3>Iceberg e os table formats</h3>
+  <p class="sit"><b>Situação:</b> você precisa corrigir 10 linhas antigas numa tabela Parquet de 5 TB, ou apagar os dados de um cliente por LGPD.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Uma camada de metadados sobre arquivos Parquet que transforma uma pasta do S3 numa tabela de verdade: com transações ACID, <code>UPDATE</code>, <code>DELETE</code>, <code>MERGE</code>, histórico de versões (time travel) e mudança de schema segura. Alternativas: Delta Lake e Hudi.</p></div>
+    <div class="blk why"><h4>Por que funciona</h4><p>Os arquivos Parquet nunca são alterados. Cada escrita cria arquivos novos e um novo <b>snapshot</b>, uma lista de quais arquivos compõem a tabela agora. Leitores sempre veem um snapshot completo, nunca uma escrita pela metade. A troca de snapshot é atômica no catálogo.</p></div>
+  </div>
+<pre>MERGE INTO silver.pedidos t
+USING atualizacoes s ON t.id = s.id
+WHEN MATCHED THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *;
+
+SELECT * FROM silver.pedidos FOR TIMESTAMP AS OF TIMESTAMP '2026-11-01 00:00:00';  <span class="c">-- time travel</span></pre>
+  <div class="blk care"><h4>Cuidado</h4><p>Muitas escritas pequenas geram muitos snapshots e arquivos. Rode manutenção periódica: compactação, <code>expire_snapshots</code> e remoção de arquivos órfãos.</p></div>
+</article>
+
+<div class="sec-head"><span class="eyebrow">Parte 4</span><h2>AWS: problemas reais e o porquê</h2></div>
+
+<!-- W1 -->
+<article class="card" id="w1">
+  <h3>Cold start na Lambda</h3>
+  <p class="sit"><b>Situação:</b> a primeira requisição da API leva 3 segundos e as seguintes, 80 ms.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Quando não há um ambiente pronto, a AWS precisa criar um: baixar o código, iniciar o runtime e rodar o código fora do handler (imports, clients). Esse é o cold start. Ambientes ficam vivos por alguns minutos e são reaproveitados (warm start).</p></div>
+    <div class="blk"><h4>Como reduzir</h4><ul><li>Pacote menor e menos imports pesados (pandas custa caro).</li><li>Crie clients fora do handler, para reaproveitar.</li><li>Mais memória também dá mais CPU, e a inicialização fica mais rápida.</li><li><b>Provisioned concurrency</b>: mantém N ambientes sempre quentes (pago).</li><li>SnapStart (Java e Python): restaura de um snapshot já iniciado.</li></ul></div>
+  </div>
+</article>
+
+<!-- W2 -->
+<article class="card" id="w2">
+  <h3>Visibility timeout no SQS</h3>
+  <p class="sit"><b>Situação:</b> a mesma mensagem é processada duas ou três vezes, sem nenhum erro no log.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Quando um consumidor recebe a mensagem, ela fica invisível para os outros por um tempo. Se o consumidor não a apagar nesse prazo, o SQS assume que ele morreu e torna a mensagem visível de novo.</p></div>
+    <div class="blk why"><h4>Por que duplica</h4><p>Se o processamento leva 60 s e o visibility timeout é 30 s, a mensagem reaparece no meio do trabalho e outro consumidor a pega. Não houve erro: o timeout é que estava curto demais.</p></div>
+  </div>
+  <p>Ajuste o visibility timeout para mais que o tempo de processamento (com Lambda, a AWS recomenda 6 vezes o timeout da função) e mantenha o consumidor idempotente, porque o SQS padrão é at-least-once de qualquer forma.</p>
+</article>
+
+<!-- W3 -->
+<article class="card" id="w3">
+  <h3>Hot partition no DynamoDB</h3>
+  <p class="sit"><b>Situação:</b> a tabela tem capacidade de sobra, mas as escritas recebem <code>ProvisionedThroughputExceededException</code>.</p>
+  <div class="grid2">
+    <div class="blk why"><h4>Por que acontece</h4><p>O DynamoDB divide os dados em partições físicas pelo hash da partition key, e cada partição tem um limite próprio (cerca de 1.000 escritas e 3.000 leituras por segundo). Se a PK é <code>data</code> e todo mundo grava "hoje", tudo cai numa partição só, e as outras ficam ociosas. É o mesmo princípio do skew no Spark.</p></div>
+    <div class="blk"><h4>Como resolver</h4><ul><li>Escolha uma PK com alta cardinalidade e acesso bem distribuído (<code>cliente_id</code>, <code>pedido_id</code>).</li><li>Write sharding: <code>DATA#2026-11-10#7</code>, com um sufixo de 0 a N, e leia os N shards em paralelo.</li><li>Evite PKs sequenciais ou de status ("PENDENTE").</li></ul></div>
+  </div>
+</article>
+
+<!-- W4 -->
+<article class="card" id="w4">
+  <h3>Athena cara e lenta</h3>
+  <p class="sit"><b>Situação:</b> a fatura do Athena veio alta e uma consulta simples leva minutos.</p>
+  <div class="blk why"><h4>Por que</h4><p>O Athena cobra por terabyte lido do S3 (cerca de US$ 5 por TB). Tudo que reduz bytes lidos reduz custo e tempo ao mesmo tempo.</p></div>
+  <div class="tbl"><table>
+    <tr><th>Ação</th><th>Efeito típico</th></tr>
+    <tr><td>CSV/JSON → Parquet com compressão</td><td>Lê de 5 a 30 vezes menos</td></tr>
+    <tr><td>Particionar por data e filtrar por ela</td><td>Lê só os dias pedidos</td></tr>
+    <tr><td><code>SELECT</code> só das colunas necessárias, nunca <code>SELECT *</code></td><td>Lê só essas colunas</td></tr>
+    <tr><td>Compactar arquivos pequenos</td><td>Menos tempo de abertura de arquivos</td></tr>
+    <tr><td>Partition projection</td><td>Evita listar milhares de partições no catálogo</td></tr>
+    <tr><td>Workgroup com limite de bytes por consulta</td><td>Impede uma consulta acidental de varrer tudo</td></tr>
+  </table></div>
+</article>
+
+<!-- W5 -->
+<article class="card" id="w5">
+  <h3>Lambda esgota as conexões do RDS</h3>
+  <p class="sit"><b>Situação:</b> num pico, o Postgres retorna <code>too many connections</code> e a API cai.</p>
+  <div class="grid2">
+    <div class="blk why"><h4>Por que acontece</h4><p>Cada ambiente de Lambda abre a própria conexão. Num pico de 1.000 execuções simultâneas, são 1.000 conexões, mas o Postgres aguenta algumas centenas, e cada conexão consome memória do banco.</p></div>
+    <div class="blk"><h4>Como resolver</h4><ul><li><b>RDS Proxy</b>: um pool de conexões gerenciado entre a Lambda e o banco, que multiplexa muitas Lambdas em poucas conexões.</li><li>Limite a concorrência da função (reserved concurrency).</li><li>Abra a conexão fora do handler, para reaproveitar.</li><li>Coloque uma fila na frente, para que a escrita aconteça no ritmo que o banco aguenta.</li></ul></div>
+  </div>
+</article>
+
+<div class="sec-head"><span class="eyebrow">Parte 5</span><h2>Sistemas distribuídos e bancos</h2></div>
+
+<!-- D1 -->
+<article class="card" id="d1">
+  <h3>Backpressure</h3>
+  <p class="sit"><b>Situação:</b> o produtor gera 10 mil eventos por segundo e o consumidor processa 2 mil.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Um mecanismo para o consumidor sinalizar "mais devagar" ou para o sistema absorver a diferença sem derrubar ninguém.</p></div>
+    <div class="blk why"><h4>Por que filas resolvem</h4><p>A fila (SQS, Kinesis) funciona como uma caixa d'água: absorve o pico e o consumidor drena no próprio ritmo. A métrica a observar é a <b>idade da mensagem mais antiga</b>: se ela cresce sem parar, o consumidor nunca alcança o produtor e é preciso escalar.</p></div>
+  </div>
+</article>
+
+<!-- D2 -->
+<article class="card" id="d2">
+  <h3>Retry com backoff exponencial e jitter</h3>
+  <p class="sit"><b>Situação:</b> uma API caiu por 10 segundos. Quando voltou, mil clientes tentaram ao mesmo tempo e a derrubaram de novo.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p><b>Backoff exponencial</b>: esperar 1 s, 2 s, 4 s, 8 s entre tentativas. <b>Jitter</b>: somar um tempo aleatório a cada espera.</p></div>
+    <div class="blk why"><h4>Por que o jitter importa</h4><p>Sem jitter, todos os clientes que falharam juntos tentam de novo juntos, em ondas sincronizadas que derrubam o serviço outra vez (thundering herd). O aleatório espalha as tentativas no tempo.</p></div>
+  </div>
+<pre>import random, time
+def com_retry(fn, tentativas=5, base=0.5, teto=20):
+    for i in range(tentativas):
+        try:
+            return fn()
+        except ErroTemporario:
+            if i == tentativas - 1:
+                raise
+            time.sleep(random.uniform(0, min(teto, base * 2 ** i)))   <span class="c"># "full jitter"</span></pre>
+  <p>Só refaça o que é seguro repetir (operações idempotentes) e só para erros temporários (timeout, 429, 503), nunca para 400.</p>
+</article>
+
+<!-- D3 -->
+<article class="card" id="d3">
+  <h3>Índices no banco relacional</h3>
+  <p class="sit"><b>Situação:</b> <code>SELECT * FROM pedidos WHERE cliente_id = 42</code> leva 8 segundos numa tabela de 50 milhões de linhas.</p>
+  <div class="grid2">
+    <div class="blk"><h4>O que é</h4><p>Uma estrutura à parte (normalmente uma B-tree) que guarda os valores da coluna em ordem, com ponteiros para as linhas. É como o índice remissivo de um livro.</p></div>
+    <div class="blk why"><h4>Por que é rápido</h4><p>Sem índice, o banco lê as 50 milhões de linhas (seq scan). Com a B-tree, encontra o valor em poucos saltos (busca logarítmica): cerca de 4 ou 5 leituras de página em vez de milhões.</p></div>
+  </div>
+<pre>EXPLAIN ANALYZE SELECT * FROM pedidos WHERE cliente_id = 42;   <span class="c">-- Seq Scan: problema</span>
+CREATE INDEX CONCURRENTLY idx_pedidos_cliente ON pedidos (cliente_id, criado_em DESC);
+<span class="c">-- índice composto: atende o filtro por cliente e já entrega ordenado por data</span></pre>
+  <div class="blk care"><h4>Cuidado</h4><ul><li>Todo índice deixa a escrita mais lenta e ocupa espaço. Não indexe tudo.</li><li>A ordem das colunas no índice composto importa: <code>(cliente_id, criado_em)</code> serve para filtro só por <code>cliente_id</code>, mas não só por <code>criado_em</code>.</li><li>Uma função na coluna (<code>WHERE lower(email) = ...</code>) ignora o índice comum; crie um índice de expressão.</li><li><code>CONCURRENTLY</code> evita travar a tabela em produção.</li></ul></div>
+</article>
+
+<style>
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.tip-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--bg);display:grid;gap:6px;align-content:start}
+.tip-card h4{color:var(--accent)}
+.qbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13px var(--f-body);padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn{font:500 14px var(--f-body);padding:8px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:focus-visible,.chip:focus-visible,.opt input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.score{font:500 15px var(--f-mono)}
+.q{border:1px solid var(--line);border-radius:10px;padding:16px;background:var(--bg);display:grid;gap:10px}
+.q .meta{font:500 12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.q .enun{font-weight:500}
+.opts{display:grid;gap:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}
+.opt input{margin-top:5px;accent-color:var(--accent)}
+.opt.certa{border-color:var(--ok);background:var(--ok-soft)}
+.opt.errada{border-color:var(--bad);background:var(--bad-soft)}
+.fb{font-size:15px;border-left:3px solid var(--ok);padding-left:12px}
+.fb.no{border-color:var(--bad)}
+.err{font-size:13px;color:var(--bad)}
+.qactions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+</style>
+
+<div class="sec-head" id="treino"><span class="eyebrow">Parte 6</span><h2>Treino: dicas, simulado e casos</h2><p>Leia as dicas, faça o simulado sem consultar as fichas e depois tente os casos abertos em voz alta.</p></div>
+
+<!-- DICAS -->
+<article class="card" id="dicas">
+  <h3>Dicas para a entrevista técnica</h3>
+  <div class="tips">
+    <div class="tip-card"><h4>Responda em 3 camadas</h4><p>1) o que é, numa frase; 2) por que funciona; 3) quando não usar. Exemplo: "Broadcast join copia a tabela pequena para cada executor. Funciona porque evita o shuffle da tabela grande. Não serve quando a tabela pequena passa de algumas centenas de MB."</p></div>
+    <div class="tip-card"><h4>Comece pelo diagnóstico</h4><p>Em "meu job está lento", nunca pule direto para a solução. Diga primeiro como mediria: Spark UI (qual stage, duração das tasks, shuffle, spill) e <code>explain()</code>. Quem mede antes de mexer passa senioridade.</p></div>
+    <div class="tip-card"><h4>Fale de trade-off</h4><p>Toda escolha tem custo. "<code>coalesce</code> é mais barato, mas reduz o paralelismo." "Cache acelera, mas tira memória do shuffle." Mostrar o lado ruim é o que separa decorar de entender.</p></div>
+    <div class="tip-card"><h4>Use números</h4><p>Partições de 128 a 256 MB; broadcast até dezenas ou poucas centenas de MB; <code>shuffle.partitions</code> padrão 200; Lambda até 15 min; Athena cerca de US$ 5 por TB lido. Números dão credibilidade.</p></div>
+    <div class="tip-card"><h4>Tenha uma história real</h4><p>Prepare 2 ou 3 casos no formato STAR: situação, tarefa, ação e resultado. Exemplo: "Um job de 2 h caiu para 15 min com broadcast e compactação de arquivos." Se ainda não tem, crie no projeto de portfólio e meça.</p></div>
+    <div class="tip-card"><h4>Pense alto no teste de código</h4><p>Explique enquanto escreve: o schema, onde há shuffle, como trata nulos e duplicatas. Um código mediano bem explicado vale mais que um ótimo em silêncio.</p></div>
+    <div class="tip-card"><h4>Não sabe? Raciocine</h4><p>"Não usei isso em produção, mas pelo que sei de shuffle eu esperaria que..." é uma resposta forte. Inventar é a pior resposta possível.</p></div>
+    <div class="tip-card"><h4>Conecte com plataforma</h4><p>Vagas de dados com perfil de plataforma valorizam software. Termine as respostas de dados citando operação: idempotência para reprocessar, alarme se o job atrasar, Terraform para o cluster, testes no CI.</p></div>
+    <div class="tip-card"><h4>Pegadinhas frequentes</h4><ul><li><code>F.coalesce</code> ≠ <code>df.coalesce</code></li><li><code>partitionBy</code> (disco) ≠ <code>repartition</code> (memória)</li><li><code>count(col)</code> ignora nulos</li><li>Chave nula não casa no join</li><li><code>union</code> junta por posição</li></ul></div>
+  </div>
+</article>
+
+<!-- SIMULADO -->
+<article class="card" id="simulado">
+  <h3>Simulado: 30 questões</h3>
+  <p>Escolha a alternativa e clique em Corrigir para ver a explicação. Seu placar fica salvo neste navegador.</p>
+  <div class="qbar">
+    <div class="chips" id="filtros" role="group" aria-label="Filtrar por tema"></div>
+    <div class="qactions"><span class="score" id="placar">0 de 30 respondidas</span><button class="btn ghost" id="refazer" type="button">Refazer tudo</button></div>
+  </div>
+  <div id="quiz" style="display:grid;gap:14px"></div>
+</article>
+
+<!-- CASOS -->
+<article class="card" id="casos">
+  <h3>Casos abertos (estilo entrevista de arquitetura)</h3>
+  <p>Não há alternativas. Responda em voz alta por 2 ou 3 minutos e só depois abra a resposta-modelo.</p>
+  <details><summary>1. Um job Glue que levava 20 minutos passou a levar 3 horas, sem mudança de código.</summary><p><b>Investigação:</b> comparar o volume de entrada (cresceu?), o número e tamanho dos arquivos (acumulou arquivos pequenos?), e no Spark UI ver qual stage ficou lento e se há skew (uma task muito maior) ou spill. <b>Causas prováveis:</b> uma chave que ficou quente, arquivos pequenos na origem, um lado do join que cresceu e deixou de caber no broadcast automático. <b>Ações:</b> AQE com skew join, compactação, broadcast explícito ou salting, mais DPUs só por último. <b>Prevenção:</b> alarme de duração do job e métrica de arquivos por partição.</p></details>
+  <details><summary>2. Desenhe a ingestão de 50 mil eventos por segundo de um app até o data lake, consultável em até 5 minutos.</summary><p>App → API Gateway ou ALB → serviço no ECS que valida e publica no <b>Kinesis Data Streams</b> (alto volume, ordem por chave, replay). Kinesis → <b>Firehose</b> com buffer de 128 MB ou 300 s, conversão para Parquet e particionamento dinâmico por data → S3 bronze. Um job (Glue streaming ou EMR) faz MERGE numa tabela Iceberg silver, e uma compactação horária resolve os arquivos pequenos. Athena consulta. Observabilidade: idade do iterador do Kinesis, falhas do Firehose para um bucket de erro e alarmes. Por que Kinesis e não SQS: volume alto, vários consumidores e possibilidade de reprocessar.</p></details>
+  <details><summary>3. O time de produto quer um endpoint que devolva "total gasto pelo cliente nos últimos 12 meses" em menos de 100 ms.</summary><p>Não consultar o data lake na hora: Athena e Spark não têm latência de milissegundos. Pré-calcular o agregado num job (diário ou incremental por eventos) e gravar num armazenamento de leitura rápida por chave, como o <b>DynamoDB</b> (PK = cliente). A API (Lambda ou ECS) lê por chave. Se precisar ser quase em tempo real, um consumidor de eventos atualiza o total a cada pedido com update atômico. Trade-off: dado levemente defasado em troca de latência e custo previsíveis.</p></details>
+  <details><summary>4. Um consumidor de fila está cobrando clientes duas vezes.</summary><p>A fila é at-least-once e o consumidor não é idempotente; ou o visibility timeout é menor que o tempo de processamento, e a mensagem reaparece. Correção: chave de idempotência (id do evento) gravada com escrita condicional no DynamoDB antes de cobrar, com status de processamento; ajustar o visibility timeout; usar a idempotency key também na chamada ao gateway de pagamento. Depois: reconciliar as cobranças duplicadas e criar alarme.</p></details>
+  <details><summary>5. Você precisa apagar todos os dados de um cliente do data lake por pedido de LGPD.</summary><p>Em Parquet puro, seria preciso reescrever todos os arquivos que contêm o cliente. Com <b>Iceberg</b>: <code>DELETE FROM tabela WHERE cliente_id = X</code> em cada camada, depois <code>expire_snapshots</code> e remoção de arquivos órfãos, para que o dado saia também do histórico. Na bronze imutável, pseudonimizar o dado pessoal na entrada (token no lugar do CPF, com o mapeamento numa tabela à parte) facilita: basta apagar o mapeamento. Registrar a execução para auditoria.</p></details>
+  <details><summary>6. Sua API no ECS fica lenta todo dia às 9h.</summary><p>Ver as métricas por horário: CPU e memória das tasks, latência p99, conexões com o banco, tempo das queries. Prováveis causas: auto scaling reagindo tarde (escala por CPU demora), banco saturado de conexões ou com queries sem índice, cold start de dependências. Ações: scheduled scaling antes das 9h, scaling por número de requisições no ALB, pool de conexões ou RDS Proxy, índices, cache para leituras repetidas. Confirmar com tracing (X-Ray) onde o tempo é gasto.</p></details>
+</article>
+
+</main>
+</div>
+
+<script>
+(function(){
+var Q=[
+{t:"Arquitetura",q:"Qual componente transforma seu código em DAG, divide em stages e distribui as tasks?",o:["Cluster Manager","Driver","Executor","Worker node"],c:1,e:"O Driver é o cérebro: cria a SparkSession, monta o plano e agenda as tasks. O Cluster Manager só aloca recursos; os Executors executam."},
+{t:"Arquitetura",q:"O Cluster Manager (YARN, por exemplo) participa da troca de dados entre tasks durante o job?",o:["Sim, todo dado passa por ele","Só no shuffle","Não, ele só aloca recursos; Driver e Executors conversam direto","Só quando há broadcast"],c:2,e:"O Cluster Manager entra no começo para alocar os executors. Depois, o Driver manda tasks direto aos Executors, e no shuffle os Executors trocam dados entre si."},
+{t:"Arquitetura",q:"Um executor morre no meio do job. O que acontece?",o:["O job inteiro falha","O Spark reexecuta só as tasks perdidas usando a linhagem","Os dados daquele executor se perdem para sempre","O Driver assume o trabalho do executor"],c:1,e:"Graças à lineage, o Spark sabe recalcular as partições perdidas e reexecuta só essas tasks num executor novo. Se o Driver morrer, aí sim a aplicação falha."},
+{t:"Arquitetura",q:"Você escreveu 10 transformações e 1 action. Quantos jobs, no mínimo, são disparados?",o:["10","11","1","0"],c:2,e:"Transformações são lazy; só actions (write, count, collect, show) disparam jobs. Uma action gera pelo menos um job."},
+{t:"Arquitetura",q:"O que cria uma nova fronteira de stage?",o:["Um filter","Um select","Um shuffle (groupBy, join, repartition)","Um withColumn"],c:2,e:"Operações narrow são encadeadas no mesmo stage (pipelining). Toda operação wide exige shuffle, e o shuffle separa stages."},
+{t:"Arquitetura",q:"Um stage tem 200 tasks. Isso significa que:",o:["Existem 200 executors","O stage processa 200 partições","O job tem 200 stages","Há 200 actions"],c:1,e:"Uma task = um stage aplicado a uma partição. 200 tasks = 200 partições (200 é o padrão de spark.sql.shuffle.partitions)."},
+{t:"Partições",q:"Qual a principal diferença entre repartition(10) e coalesce(10)?",o:["São idênticos","coalesce faz shuffle completo; repartition não","repartition faz shuffle completo e balanceia; coalesce só junta partições sem shuffle","coalesce só aumenta partições"],c:2,e:"repartition redistribui tudo (shuffle) e deixa partições equilibradas. coalesce só reduz, juntando partições vizinhas sem shuffle, por isso é mais barato e pode ficar desigual."},
+{t:"Partições",q:"Seu DataFrame tem 4 partições e o cluster tem 64 cores livres. Como aumentar o paralelismo?",o:["coalesce(64)","repartition(64)","cache()","broadcast()"],c:1,e:"coalesce só diminui partições: coalesce(64) com 4 partições continua com 4. Para aumentar, só repartition."},
+{t:"Partições",q:"Qual a diferença entre df.repartition('dt') e df.write.partitionBy('dt')?",o:["Nenhuma","repartition organiza partições em memória (tasks); partitionBy cria pastas no disco","partitionBy faz shuffle e repartition não","repartition cria pastas no S3"],c:1,e:"São conceitos diferentes: repartition muda as partições em memória. partitionBy grava pastas dt=.../ no storage, para pular dados na leitura. É comum usar os dois juntos: repartition('dt') antes de partitionBy('dt')."},
+{t:"Partições",q:"O que F.coalesce(col('desconto'), lit(0)) faz?",o:["Reduz o número de partições","Devolve o primeiro valor não nulo: desconto, ou 0 se for nulo","Junta duas colunas","Remove nulos do DataFrame"],c:1,e:"Pegadinha clássica: F.coalesce é a função SQL que devolve o primeiro valor não nulo. Não tem relação com df.coalesce, que mexe em partições."},
+{t:"Partições",q:"Um filter caro é seguido de coalesce(1) e write. Por que fica lento?",o:["coalesce faz shuffle","Sem shuffle para separar stages, o filtro também passa a rodar numa única task","O write ignora o coalesce","coalesce apaga o cache"],c:1,e:"O coalesce não cria fronteira de stage, então o número reduzido de partições vale para tudo no mesmo stage. repartition(1) mantém o filtro paralelo e só a escrita fica única."},
+{t:"Joins",q:"Join entre vendas (2 bilhões de linhas) e lojas (500 linhas). Melhor estratégia?",o:["Sort-merge join","Broadcast join de lojas","Cartesian join","Repartition das duas tabelas por loja_id"],c:1,e:"Copiar 500 linhas para cada executor é muito mais barato que embaralhar 2 bilhões de linhas. O broadcast elimina o shuffle da tabela grande."},
+{t:"Joins",q:"Qual é o principal risco do broadcast join?",o:["Gerar muitos arquivos","A tabela broadcast não caber na memória do Driver e dos executors (OOM)","Perder linhas no join","Desligar o AQE"],c:1,e:"A tabela é coletada pelo Driver e copiada para cada executor. Com uma tabela grande demais, o job quebra por falta de memória."},
+{t:"Joins",q:"Qual estratégia o Spark usa por padrão para juntar duas tabelas grandes?",o:["Broadcast hash join","Sort-merge join","Nested loop join","Cartesian"],c:1,e:"O sort-merge escala porque não precisa que nenhum lado caiba na memória: ordena os dois lados e percorre como um zíper, com spill para disco se necessário."},
+{t:"Joins",q:"Por que um join com condição BETWEEN costuma ser muito lento?",o:["BETWEEN não é suportado","Sem igualdade, não dá para usar hash nem sort pela chave, e o Spark cai no nested loop","Ele sempre faz broadcast","Ele ignora índices do S3"],c:1,e:"Sem uma condição de igualdade, o Spark compara linha a linha (nested loop). A saída é criar uma chave de igualdade (por exemplo, o dia) e filtrar o intervalo depois."},
+{t:"Skew",q:"199 tasks terminam em 10 s e uma leva 30 min. Diagnóstico mais provável?",o:["Pouca memória no Driver","Data skew: uma chave concentra a maioria das linhas","Arquivos pequenos","Cold start"],c:1,e:"Uma task muito mais lenta que a mediana, com Shuffle Read muito maior, é o sinal clássico de skew."},
+{t:"Skew",q:"No salting de um join, o que se faz com a tabela menor?",o:["Nada","Apaga as chaves quentes","Replica cada linha N vezes, uma para cada valor de sal","Faz broadcast obrigatório"],c:2,e:"O lado grande ganha um sal aleatório de 0 a N-1. O lado menor precisa ter todas as combinações chave + sal, por isso é replicado N vezes."},
+{t:"Skew",q:"O que o AQE (Adaptive Query Execution) consegue fazer em tempo de execução?",o:["Criar índices","Juntar partições pequenas, trocar para broadcast e dividir partições com skew","Converter CSV em Parquet","Aumentar o número de executors"],c:1,e:"O AQE mede o resultado real de cada shuffle e reajusta o plano: coalesce de partições pequenas, conversão para broadcast e divisão de partições com skew."},
+{t:"Agregação",q:"Por que groupBy().agg(sum) escala bem em 1 bilhão de linhas?",o:["Porque não faz shuffle","Porque faz agregação parcial em cada partição e só o resumo passa pelo shuffle","Porque usa o Driver","Porque ordena os dados antes"],c:1,e:"O Spark agrega localmente (HashAggregate parcial), envia poucos valores por chave no shuffle e combina no final. Com collect_list não dá para resumir, então tudo viaja."},
+{t:"Agregação",q:"Você precisa do total por cliente ao lado de cada pedido, sem perder linhas. Use:",o:["groupBy","Window function com partitionBy('cliente_id')","distinct","pivot"],c:1,e:"groupBy colapsa as linhas; a window mantém todas e acrescenta a coluna calculada sobre o grupo."},
+{t:"Agregação",q:"Qual a forma determinística de manter a versão mais recente de cada id?",o:["dropDuplicates(['id'])","distinct()","row_number() por id ordenado por data desc e filtrar rn = 1","coalesce(1)"],c:2,e:"dropDuplicates mantém uma cópia arbitrária. Com row_number e ordenação explícita, o resultado é sempre o mesmo."},
+{t:"Agregação",q:"Qual o resultado de avg sobre os valores [10, NULL, 20]?",o:["10","15","Nulo","Erro"],c:1,e:"Funções de agregação ignoram nulos: (10 + 20) / 2 = 15. Se o nulo devesse contar como zero, use F.coalesce(col, lit(0)) antes."},
+{t:"Agregação",q:"Num join por cliente_id, linhas com cliente_id nulo dos dois lados:",o:["Casam entre si","Nunca casam, porque NULL = NULL não é verdadeiro","Geram erro","Viram broadcast"],c:1,e:"Em SQL, NULL = NULL resulta em nulo, não em verdadeiro. Para casar nulos, use eqNullSafe (<=> em SQL)."},
+{t:"Armazenamento",q:"Por que SUM(valor) em Parquet lê muito menos que em CSV?",o:["Parquet não tem compressão","Parquet é colunar: lê só a coluna valor e ainda comprime melhor","CSV é ordenado","Parquet guarda os dados em memória"],c:1,e:"No formato colunar, cada coluna fica junta: a consulta lê só o que usa (column pruning), com compressão melhor e metadados para pular blocos."},
+{t:"Armazenamento",q:"Qual filtro aproveita o partition pruning numa tabela particionada por dt?",o:["WHERE date_format(dt, '%Y-%m') = '2026-11'","WHERE dt BETWEEN DATE '2026-11-01' AND DATE '2026-11-30'","WHERE upper(dt) LIKE '2026%'","Nenhum"],c:1,e:"Aplicar função sobre a coluna de partição impede o motor de cortar pastas. Compare a coluna diretamente."},
+{t:"Armazenamento",q:"Qual tamanho de arquivo é o alvo comum num data lake?",o:["1 a 10 KB","128 MB a 1 GB","Exatamente 1 arquivo por tabela","50 GB ou mais"],c:1,e:"Arquivos pequenos geram overhead de abertura; arquivos gigantes tiram paralelismo. A faixa de 128 MB a 1 GB equilibra os dois."},
+{t:"Armazenamento",q:"Depois de um groupBy, você grava com partitionBy('dt') e aparecem 200 arquivos por pasta. Por quê?",o:["Bug do S3","spark.sql.shuffle.partitions = 200: cada task grava um arquivo em cada pasta em que tem dados","O Parquet sempre gera 200 arquivos","Por causa do broadcast"],c:1,e:"Após o shuffle há 200 tasks, e cada uma grava um arquivo por pasta de partição. Resolva com repartition('dt') antes de gravar, ou com o AQE."},
+{t:"Armazenamento",q:"Para que serve o Iceberg sobre arquivos Parquet?",o:["Só para comprimir","Dar transações ACID, UPDATE/DELETE/MERGE, time travel e evolução de schema","Substituir o Spark","Criar índices B-tree"],c:1,e:"O Iceberg adiciona uma camada de metadados e snapshots que transforma uma pasta de arquivos numa tabela transacional."},
+{t:"AWS",q:"Uma mensagem do SQS é processada duas vezes, sem erro no log. Causa mais provável?",o:["Bug do SQS","Visibility timeout menor que o tempo de processamento","DLQ cheia","Lambda sem memória"],c:1,e:"Se o processamento passa do visibility timeout, a mensagem volta para a fila e outro consumidor a pega. Ajuste o timeout e mantenha o consumidor idempotente."},
+{t:"AWS",q:"Num pico, a Lambda gera 'too many connections' no Postgres. Melhor solução?",o:["Aumentar a memória da Lambda","Usar o RDS Proxy (pool de conexões) e limitar a concorrência","Trocar Postgres por S3","Desligar o auto scaling"],c:1,e:"Cada ambiente de Lambda abre sua conexão. O RDS Proxy multiplexa muitas Lambdas em poucas conexões; a reserved concurrency limita o pico."}
+];
+var KEY="simulado-spark-aws", st={};
+try{st=JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){st={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+var temas=["Todos"];Q.forEach(function(x){if(temas.indexOf(x.t)<0)temas.push(x.t)});
+var filtro="Todos",box=document.getElementById("quiz"),fbox=document.getElementById("filtros");
+temas.forEach(function(t){var b=document.createElement("button");b.type="button";b.className="chip";b.textContent=t;b.setAttribute("aria-pressed",t===filtro);b.onclick=function(){filtro=t;[].forEach.call(fbox.children,function(c){c.setAttribute("aria-pressed",c.textContent===t)});render()};fbox.appendChild(b)});
+function placar(){var r=0,a=0;Object.keys(st).forEach(function(k){r++;if(st[k].ok)a++});document.getElementById("placar").textContent=r+" de "+Q.length+" respondidas · "+a+" certas"}
+function render(){
+  box.innerHTML="";
+  Q.forEach(function(x,i){
+    if(filtro!=="Todos"&&x.t!==filtro)return;
+    var d=document.createElement("div");d.className="q";
+    var h='<div class="meta">Questão '+(i+1)+' · '+x.t+'</div><div class="enun"></div><div class="opts">';
+    x.o.forEach(function(op,j){h+='<label class="opt"><input type="radio" name="q'+i+'" id="q'+i+'o'+j+'" value="'+j+'"><span></span></label>'});
+    h+='</div><div class="qactions"><button class="btn" type="button">Corrigir</button><span class="err" hidden>Escolha uma alternativa primeiro.</span></div><div class="fb" hidden></div>';
+    d.innerHTML=h;
+    d.querySelector(".enun").textContent=x.q;
+    var spans=d.querySelectorAll(".opt span");x.o.forEach(function(op,j){spans[j].textContent=op});
+    var btn=d.querySelector(".btn"),err=d.querySelector(".err"),fb=d.querySelector(".fb");
+    d.querySelectorAll("input").forEach(function(inp){inp.onchange=function(){err.hidden=true}});
+    function mostrar(esc){
+      var labels=d.querySelectorAll(".opt");
+      labels.forEach(function(l,j){l.classList.remove("certa","errada");if(j===x.c)l.classList.add("certa");else if(j===esc)l.classList.add("errada")});
+      d.querySelectorAll("input").forEach(function(inp,j){inp.checked=(j===esc);inp.disabled=true});
+      var ok=esc===x.c;fb.hidden=false;fb.className="fb"+(ok?"":" no");
+      fb.textContent=(ok?"Correto. ":"Errado. A resposta certa é: "+x.o[x.c]+". ")+x.e;
+      btn.hidden=true;
+    }
+    btn.onclick=function(){
+      var sel=d.querySelector("input:checked");
+      if(!sel){err.hidden=false;return}
+      var esc=+sel.value;st[i]={esc:esc,ok:esc===x.c};save();mostrar(esc);placar();
+    };
+    if(st[i])mostrar(st[i].esc);
+    box.appendChild(d);
+  });
+}
+document.getElementById("refazer").onclick=function(){st={};save();render();placar()};
+render();placar();
+})();
+</script>
+
+
+</body></html>
